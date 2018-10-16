@@ -83,8 +83,7 @@ int main(int argc,char** argv){
 			la_y.push_back(period[1]/cell);
 			la_z.push_back(period[2]/cell);
 		}
-	  if(coord_pattern==line){
-			std::fstream fs;
+	  if(coord_pattern==line || line.find(coord_pattern)!=std::string::npos){
 			for(size_t i=0;i<cell*cell*cell;i++){
 				for(size_t j=0;j<3;j++){
 					dump>>A[i].position[j];
