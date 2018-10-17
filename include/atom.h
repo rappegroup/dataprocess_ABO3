@@ -2,6 +2,7 @@
 #define atom_h
 #include <iostream>
 #include <list>
+#include "polarconfig.h"
 typedef struct Atom{
 	double position[3];
 	char type;
@@ -31,4 +32,5 @@ int* neighbor_o_forA(int index,int cell);
 int* neighbor_o_forB(int index,int cell);
 int* neighbor_A_forB(int index,int cell);
 double tiltangle(atom* a, atom* b,atom* c,double* p);
+void outpolar();
 #endif

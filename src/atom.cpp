@@ -2,6 +2,8 @@
 #include <iostream>
 #include <cmath>
 #include <fstream>
+#include <vector>
+#include <map>
 #include <list>
 //a=origin,b=end
 double* distance(atom* a,atom* b,double* p){
@@ -364,4 +366,54 @@ double norm(double* p,int dim){
         sum=sum+p[i]*p[i];
     }
     return sqrt(sum);
+}
+void outpolar(){
+  using namespace polarconfig;
+  std::fstream fileout;
+	fileout.open("result.txt",std::fstream::out);
+	fileout<<"the average lattice constant is:"<<std::endl;
+	fileout<<average(la_x)<<" "<<average(la_y)<<" "<<average(la_z)<<std::endl;
+	fileout<<"the average B site cations displacement is:"<<std::endl;
+	fileout<<fabs(average(disp_allB_x))<<" "<<fabs(average(disp_allB_y))<<" "<<fabs(average(disp_allB_z))<<std::endl;
+	fileout<<"the average Asite one displacement is:"<<std::endl;
+	fileout<<fabs(average(disp_allba_x))<<" "<<fabs(average(disp_allba_y))<<" "<<fabs(average(disp_allba_z))<<std::endl;
+	fileout<<"the average Asite two displacement is:"<<std::endl;
+	fileout<<fabs(average(disp_allca_x))<<" "<<fabs(average(disp_allca_y))<<" "<<fabs(average(disp_allca_z))<<std::endl;
+	fileout<<"the average O6 tilt angle is:"<<std::endl;
+	fileout<<(fabs(average(tilt_angle)))<<std::endl;
+	fileout<<"the averaget O6 tilt angle in three direction is:"<<std::endl;
+	fileout<<(fabs(average(tilt_angle_one)))<<" "<<fabs(average(tilt_angle_two))<<" "<<fabs(average(tilt_angle_three))<<std::endl;
+	fileout<<"the scalar average B site displacement is:"<<std::endl;
+	fileout<<average(disp_B_scalar)<<std::endl;
+	fileout<<"the scalar average Asite one dispalcement is:"<<std::endl;
+	fileout<<average(disp_ba_scalar)<<std::endl;
+	fileout<<"the scalar average Asite two displacement is:"<<std::endl;
+	fileout<<average(disp_ca_scalar)<<std::endl;
+	std::vector<double> pall(3,0.0);
+	std::vector<double> var(3,0.0);
+	pall[0]=std::fabs(average(px));
+	pall[1]=std::fabs(average(py));
+	pall[2]=std::fabs(average(pz));
+	std::fstream pout;
+	pout.open("polar.txt",std::fstream::out);
+	std::list<double>::iterator pyi=py.begin();
+	std::list<double>::iterator pzi=pz.begin();
+	for(std::list<double>::iterator pxi=px.begin();pxi!=px.end();pxi++){
+		pout<<*(pxi)<<" "<<*pyi<<" "<<*pzi<<std::endl;
+		pyi++;
+		pzi++;
+	}
+	var[0]=variance(px);
+	var[1]=variance(py);
+	var[2]=variance(pz);
+	std::map <double,double> good;
+	for(size_t i=0;i<3;i++){
+		good.insert(good.end(),std::pair <double,double> (pall[i],var[i]));
+	}
+//	sort(pall.begin(),pall.end());
+	fileout<<"the polarization is (absolute value):"<<std::endl;
+	fileout<<pall[0]<<" "<<pall[1]<<" "<<pall[2]<<std::endl;
+	fileout<<"polarization variance is:"<<std::endl;
+	fileout<<good[pall[0]]<<" "<<good[pall[1]]<<" "<<good[pall[2]]<<std::endl;
+	fileout.close();
 }
