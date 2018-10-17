@@ -10,6 +10,7 @@
 #include "space.h"
 #include "interface.h"
 #include "polarconfig.h"
+#include "autospeed.h"
 int main(int argc,char** argv){
 	//caculating the displacement for ABO_x3
 	int cell;
@@ -108,6 +109,9 @@ int main(int argc,char** argv){
 	}
 	if(polarization_on){
 		outpolar();
+	}
+	if(velocity_on){
+		autospeed(ve_list,cell);
 	}
 	dump.close();
 	calist.close();
