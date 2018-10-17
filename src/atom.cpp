@@ -367,6 +367,69 @@ double norm(double* p,int dim){
     }
     return sqrt(sum);
 }
+void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
+			double* dispba;
+	    double* dispca;
+	    double* dispB;
+			double* polar;
+			double disp_scalar;
+    	int* index;
+    	int a;
+    	int b;
+    	int c;
+    	double angle;
+	    dispB=displace_average_B(B,oxygen,period,cell);
+			disp_scalar=displace_average_B_scalar(B,oxygen,period,cell);
+			polarconfig::disp_B_scalar.push_back(disp_scalar);
+			polarconfig::disp_allB_x.push_back(dispB[0]);
+			polarconfig::disp_allB_y.push_back(dispB[1]);
+			polarconfig::disp_allB_z.push_back(dispB[2]);
+			dispba=displace_average_Ba(A,oxygen,period,cell);
+			disp_scalar=displace_average_Ba_scalar(A,oxygen,period,cell);
+			polarconfig::disp_ba_scalar.push_back(disp_scalar);
+			polarconfig::disp_allba_x.push_back(dispba[0]);
+			polarconfig::disp_allba_y.push_back(dispba[1]);
+			polarconfig::disp_allba_z.push_back(dispba[2]);
+			dispca=displace_average_Ca(A,oxygen,period,cell);
+			disp_scalar=displace_average_Ca_scalar(A,oxygen,period,cell);
+			polarconfig::disp_ca_scalar.push_back(disp_scalar);
+			polarconfig::disp_allca_x.push_back(dispca[0]);
+			polarconfig::disp_allca_y.push_back(dispca[1]);
+			polarconfig::disp_allca_z.push_back(dispca[2]);
+			polar=polar_average(A,B,oxygen,period,cell);
+			//sort(polar,3);
+			polarconfig::px.push_back(polar[0]);
+			polarconfig::py.push_back(polar[1]);
+			polarconfig::pz.push_back(polar[2]);
+			//compute the tilt angle now;
+			for(size_t i=0;i<cell*cell*cell;i++){
+				index=changeindex(i,cell);
+				a=changeback(index[0],index[1],index[2],cell);
+				b=changeback(index[0],index[1],index[2]+1,cell);
+				c=changeback(index[0],index[1],index[2]+2,cell);
+				angle=tiltangle(a+oxygen,b+oxygen,c+oxygen,period);
+				polarconfig::tilt_angle.push_back(angle);
+				polarconfig::tilt_angle_one.push_back(angle);
+			}
+			for(size_t i=0;i<cell*cell*cell;i++){
+				index=changeindex(i,cell);
+				a=changeback(index[0],index[1],index[2],cell);
+				b=changeback(index[0],index[1]+1,index[2],cell);
+				c=changeback(index[0],index[1]+2,index[2],cell);
+				angle=tiltangle(cell*cell*cell+a+oxygen,cell*cell*cell+b+oxygen,c+oxygen+cell*cell*cell,period);
+				polarconfig::tilt_angle.push_back(angle);
+				polarconfig::tilt_angle_two.push_back(angle);
+			}
+		for(size_t i=0;i<cell*cell*cell;i++){
+				index=changeindex(i,cell);
+				a=changeback(index[0],index[1],index[2],cell);
+				b=changeback(index[0]+1,index[1],index[2],cell);
+				c=changeback(index[0]+2,index[1],index[2],cell);
+				angle=tiltangle(2*cell*cell*cell+a+oxygen,2*cell*cell*cell+b+oxygen,c+oxygen+2*cell*cell*cell,period);
+				polarconfig::tilt_angle.push_back(angle);
+				polarconfig::tilt_angle_three.push_back(angle);
+			}
+}
 void outpolar(){
   using namespace polarconfig;
   std::fstream fileout;
