@@ -1,8 +1,8 @@
-CXX=icc
+CXX=g++
 CXXFLAGS= -std=c++11
 DEPS= space.h atom.h interface.h polarconfig.h autospeed.h
-LIBPATH =-L/opt/gcc/7.3.0/snos/lib64
-CXXFLAGS += -I/opt/gcc/7.3.0/snos/include
+LIBPATH =
+CXXFLAGS +=
 CXXFLAGS +=-I./include
 VPATH=./src
 ana.x: atom.o main.o space.o interface.o polarconfig.o autospeed.o
