@@ -3,6 +3,7 @@
 #include <cmath>
 #include <fstream>
 #include <vector>
+#include <new>
 #include <map>
 #include <list>
 //a=origin,b=end
