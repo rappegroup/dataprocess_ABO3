@@ -21,8 +21,9 @@ int main(int argc,char** argv){
 	bool velocity_on=true;
 	bool polarization_on=true;
 	std::string calistfile;
-	info(cell,dumpfile,calistfile,velocity_on,polarization_on);
+	info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature);
 	std::list<double*> ve_list;
+	std::cout<<"the temperature now is: "<<std::endl;
 	double* ve_temp;
 	size_t v_count=0;
 	dump.open(dumpfile,std::fstream::in);

@@ -24,4 +24,5 @@ namespace polarconfig{
  std::list<double> px;
  std::list<double> py;
  std::list<double> pz;
+ double temperature;
 }
