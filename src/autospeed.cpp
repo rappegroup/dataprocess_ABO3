@@ -42,7 +42,7 @@ void autospeed(std::list<double*>& ve_list,int cell){
 	*/
 	std::fstream autoout;
 	autoout.open("autocorrelation_of_velocity.txt",std::fstream::out);
-	for(size_t i=0;i<cell-1;i++){
+	for(size_t i=0;i<len-1;i++){
 		autoout<<autocorre(ve_list,cell,i)<<std::endl;
 	}
 }
