@@ -25,4 +25,5 @@ namespace polarconfig{
  std::list<double> py;
  std::list<double> pz;
  double temperature;
+ int cell;
 }

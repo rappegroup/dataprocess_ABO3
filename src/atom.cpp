@@ -431,12 +431,24 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
 				polarconfig::tilt_angle_three.push_back(angle);
 			}
 }
+/*here polarvar are in units of (e/A^3)^2,volume are in units of A^3,temperature are in units of K*/
+double dielectric(double polarvar,double volume,double temp){
+	return 1e-30/(1.38*1e-23*8.85*1e-12)*polarvar*volume/temp;
+	/*1e-30 is to convert the unit of A^3 to m^3
+	 *1.38*1e-23 is kb boltzmann constant.
+	 *8.85*1e-12 is the dielectric constant in vaccum.
+	 * */
+}
 void outpolar(){
   using namespace polarconfig;
   std::fstream fileout;
+	double lx,ly,lz;
+	lx=average(la_x);
+	ly=average(la_y);
+	lz=average(la_z);
 	fileout.open("result.txt",std::fstream::out);
 	fileout<<"the average lattice constant is:"<<std::endl;
-	fileout<<average(la_x)<<" "<<average(la_y)<<" "<<average(la_z)<<std::endl;
+	fileout<<lx<<" "<<ly<<" "<<lz<<std::endl;
 	fileout<<"the average B site cations displacement is:"<<std::endl;
 	fileout<<fabs(average(disp_allB_x))<<" "<<fabs(average(disp_allB_y))<<" "<<fabs(average(disp_allB_z))<<std::endl;
 	fileout<<"the average Asite one displacement is:"<<std::endl;
@@ -479,5 +491,11 @@ void outpolar(){
 	fileout<<pall[0]<<" "<<pall[1]<<" "<<pall[2]<<std::endl;
 	fileout<<"polarization variance is:"<<std::endl;
 	fileout<<good[pall[0]]<<" "<<good[pall[1]]<<" "<<good[pall[2]]<<std::endl;
+	fileout<<"the relative dielectric constant(epsilon0) is :"<<std::endl;
+	double dx=dielectric(good[pall[0]],lx*ly*lz*cell*cell*cell,temperature);
+	double dy=dielectric(good[pall[1]],lx*ly*lz*cell*cell*cell,temperature);
+	double dz=dielectric(good[pall[2]],lx*ly*lz*cell*cell*cell,temperature);
+	fileout<<dx<<" "<<dy<<" "<<dz<<std::endl;
+	fileout<<(dx+dy+dz)/3.0<<std::endl;
 	fileout.close();
 }

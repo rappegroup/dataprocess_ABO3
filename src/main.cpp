@@ -13,7 +13,7 @@
 #include "autospeed.h"
 int main(int argc,char** argv){
 	//caculating the displacement for ABO_x3
-	int cell;
+	int& cell=polarconfig::cell;
 	std::fstream dump;
 	std::fstream result;
 	std::fstream calist;
@@ -23,7 +23,7 @@ int main(int argc,char** argv){
 	std::string calistfile;
 	info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature);
 	std::list<double*> ve_list;
-	std::cout<<"the temperature now is: "<<std::endl;
+	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
 	double* ve_temp;
 	size_t v_count=0;
 	dump.open(dumpfile,std::fstream::in);

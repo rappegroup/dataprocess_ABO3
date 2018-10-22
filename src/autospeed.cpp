@@ -2,6 +2,8 @@
 #include <list>
 #include <iostream>
 #include <fstream>
+#include <complex.h>
+#include <fftw3.h>
 double innerprod(std::list<double*>& ve_list,int cell,size_t framei,size_t framej){
 	double sum=0.0;
 	std::list<double*>::iterator framei_iterator=ve_list.begin();
