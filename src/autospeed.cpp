@@ -42,7 +42,21 @@ void autospeed(std::list<double*>& ve_list,int cell){
 	*/
 	std::fstream autoout;
 	autoout.open("autocorrelation_of_velocity.txt",std::fstream::out);
+	double* in=new double[len];
+	double temp=0.0;
 	for(size_t i=0;i<len-1;i++){
-		autoout<<autocorre(ve_list,cell,i)<<std::endl;
+		temp=autocorre(ve_list,cell,i);
+		autoout<<temp<<std::endl;
+	  in[i]=temp;
 	}
+	fftw_complex *out;/* Output */
+	fftw_plan p;/*Plan*/
+	out=(fftw_complex*) fftw_malloc(sizeof(fftw_complex)*(len/2+1));
+	p=fftw_plan_dft_r2c_1d(len,in,out,FFTW_ESTIMATE);
+	fftw_execute(p);
+	for(size_t i=0;i<len/2+1;i++){
+		std::cout<<out[i][0]<<" "<<out[i][1]<<std::endl;
+	}
+	fftw_destroy_plan(p);
+	fftw_free(out);
 }
