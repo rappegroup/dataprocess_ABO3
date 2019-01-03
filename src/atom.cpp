@@ -141,7 +141,7 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 		for(size_t j=0;j<6;j++){
 			dist=distance(B+i,neighbor[j]+oxygen,p);
 			for(size_t k=0;k<3;k++){
-				dist[k]=dist[k]*(oxygen->charge)/2.0;
+				dist[k]=dist[k]*((oxygen+neighbor[j])->charge)/2.0;
 			}
 			sum_together(sum,dist,3);
 		}
@@ -150,7 +150,7 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 			dist=distance(B+i,A+neighbor[j],p);
 			for(size_t k=0;k<3;k++){
 				//now this guy turn into polar.
-				dist[k]=dist[k]*(A->charge)/8.0;
+				dist[k]=dist[k]*((A+neighbor[j])->charge)/8.0;
 			}
 			sum_together(sum,dist,3);
 		}
