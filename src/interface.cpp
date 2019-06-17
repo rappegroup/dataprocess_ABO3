@@ -20,8 +20,8 @@ void info(int& cell,std::string& dumpfile,std::string& calistfile,bool& velocity
 	std::vector<std::string> input;
 	std::string flag;
 	std::istringstream stre;
-	while(temp!="/"){
-		getline(std::cin,temp);
+	getline(std::cin,temp);
+	while(temp.find("/")==std::string::npos){
 		input=split(temp,"=");
 		flag=input[1];
 		if(input[0].find("filename")!=std::string::npos){
@@ -60,12 +60,6 @@ void info(int& cell,std::string& dumpfile,std::string& calistfile,bool& velocity
 			stre>>temperature;
 			stre.clear();
 		}
+	getline(std::cin,temp);
 	}
-	/*
-	std::cout<<dumpfile<<std::endl;
-	std::cout<<calistfile<<std::endl;
-	std::cout<<cell<<std::endl;
-	std::cout<<velocity_on<<std::endl;
-	std::cout<<polarization_on<<std::endl;
-	*/
 }
