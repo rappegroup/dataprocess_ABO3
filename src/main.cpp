@@ -27,8 +27,8 @@ int main(int argc,char** argv){
 	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
 	double* ve_temp;
 	size_t v_count=0;
-	dump.open(dumpfile,std::fstream::in);
-	calist.open(calistfile,std::fstream::in);
+	dump.open(dumpfile.c_str(),std::fstream::in);
+	calist.open(calistfile.c_str(),std::fstream::in);
 	atom* A=new atom[cell*cell*cell];
 	atom* B=new atom[cell*cell*cell];
 	atom* oxygen=new atom[3*cell*cell*cell];
