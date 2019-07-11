@@ -11,6 +11,7 @@
 #include "interface.h"
 #include "polarconfig.h"
 #include "autospeed.h"
+#include <queue>
 int main(int argc,char** argv){
 	//caculating the displacement for ABO_x3
 	int& cell=polarconfig::cell;
@@ -33,7 +34,18 @@ int main(int argc,char** argv){
 	atom* oxygen=new atom[3*cell*cell*cell];
 	for(size_t i=0;i<cell*cell*cell;i++){
 		A[i].type='b';
-		A[i].charge=2.70;
+		A[i].charge[0]=2.90;
+    A[i].charge[1]=2.90;
+    A[i].charge[2]=2.90;
+    polarconfig::disp_Asite_x.push_back(std::list<double>());
+    polarconfig::disp_Asite_y.push_back(std::list<double>());
+    polarconfig::disp_Asite_z.push_back(std::list<double>());
+    polarconfig::disp_Bsite_x.push_back(std::list<double>());
+    polarconfig::disp_Bsite_y.push_back(std::list<double>());
+    polarconfig::disp_Bsite_z.push_back(std::list<double>());
+    polarconfig::dipole_x.push_back(std::queue<double>());
+    polarconfig::dipole_y.push_back(std::queue<double>());
+    polarconfig::dipole_z.push_back(std::queue<double>());
 	}
 	int ca_num;
 	while(calist>>ca_num){
@@ -41,12 +53,28 @@ int main(int argc,char** argv){
 	}
 	for(size_t i=0;i<cell*cell*cell;i++){
 		B[i].type='z';
-		B[i].charge=6.30;
+    for(size_t j=0;j<3;j++){
+		B[i].charge[j]=6.70;
+    }
 	}
-	for(size_t i=0;i<3*cell*cell*cell;i++){
+	for(size_t i=0;i<cell*cell*cell;i++){
 		oxygen[i].type='o';
-		oxygen[i].charge=-3.00;
+		oxygen[i].charge[0]=-2.40;
+    oxygen[i].charge[1]=-2.40;
+    oxygen[i].charge[2]=-4.80;
 	}
+  for(size_t i=cell*cell*cell;i<2*cell*cell*cell;i++){
+    oxygen[i].type='o';
+    oxygen[i].charge[0]=-2.40;
+    oxygen[i].charge[1]=-4.80;
+    oxygen[i].charge[2]=-2.40;
+  }
+  for(size_t i=2*cell*cell*cell;i<3*cell*cell*cell;i++){
+    oxygen[i].type='o';
+    oxygen[i].charge[0]=-4.80;
+    oxygen[i].charge[1]=-2.40;
+    oxygen[i].charge[2]=-2.40;
+  }
 	std::string la_pattern="ITEM: BOX BOUNDS pp pp pp";
 	std::string coord_pattern="ITEM: ATOMS x y z ";
 	double period[3]={0,0,0};
@@ -105,6 +133,8 @@ int main(int argc,char** argv){
       //std::cout<<Pentahedron(A,oxygen,0,cell,period)<<std::endl;
 			if(polarization_on){
 				analyzepolar(A,B,oxygen,period,cell);
+        displace_Asite_record(A,oxygen,period,cell);
+        displace_Bsite_record(B,oxygen,period,cell);
 			}
 		}
 	}

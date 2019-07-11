@@ -6,7 +6,7 @@
 typedef struct Atom{
 	double position[3];
 	char type;
-	double charge;
+	double charge[3];
 	int tick;
 }atom;
 void sort(double* input,int dim);
@@ -23,6 +23,12 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double* p,int cell);
 double displace_average_B_scalar(atom *B,atom *oxygen,double* p,int cell);
 double displace_average_Ba_scalar(atom *A,atom *oxygen,double* p,int cell);
 double displace_average_Ca_scalar(atom *A,atom *oxygen,double* p,int cell);
+double* displace_average_Asite(atom* A,atom* oxygen,double* p,int cell,char type_id);
+double* displace_average_Bsite(atom* B,atom* oxygen,double* p,int cell,char type_id);
+double displace_average_Asite_scalar(atom* A,atom* oxygen,double *p,int cell,char type_id);
+double displace_average_Bsite_scalar(atom* B,atom* oxygen,double* p,int cell,char type_id);
+void displace_Bsite_record(atom* B,atom* oxygen,double* p,int cell);
+void displace_Asite_record(atom* A,atom* oxygen,double* p,int cell);
 void sum_together(double*,double*,int);
 int* changeindex(int index,int cell);
 int  changeback(int x,int y,int z,int cell);

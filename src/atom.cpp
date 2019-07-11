@@ -1,4 +1,5 @@
 #include "atom.h"
+#include "polarconfig.h"
 #include <iostream>
 #include <cmath>
 #include <fstream>
@@ -35,6 +36,7 @@ double far(atom* a,atom* b,double* p){
 	for(size_t i=0;i<3;i++){
 		sum=sum+temp[i]*temp[i];
 	}
+  delete [] temp;
 	return sqrt(sum);
 }
 int* changeindex(int index,int cell){
@@ -141,7 +143,7 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 		for(size_t j=0;j<6;j++){
 			dist=distance(B+i,neighbor[j]+oxygen,p);
 			for(size_t k=0;k<3;k++){
-				dist[k]=dist[k]*((oxygen+neighbor[j])->charge)/2.0;
+				dist[k]=dist[k]*((oxygen+neighbor[j])->charge[k])/2.0;
 			}
 			sum_together(sum,dist,3);
 		}
@@ -150,13 +152,16 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 			dist=distance(B+i,A+neighbor[j],p);
 			for(size_t k=0;k<3;k++){
 				//now this guy turn into polar.
-				dist[k]=dist[k]*((A+neighbor[j])->charge)/8.0;
+				dist[k]=dist[k]*((A+neighbor[j])->charge[k])/8.0;
 			}
 			sum_together(sum,dist,3);
 		}
 		px.push_back(sum[0]/volume*16);//16 is aim at converting the units from e to C
 		py.push_back(sum[1]/volume*16);//16 is aim at converting the units from e to C
 		pz.push_back(sum[2]/volume*16);//16 is aim at converting the units from e to C
+    polarconfig::dipole_x[i].push(sum[0]/volume*16);
+    polarconfig::dipole_y[i].push(sum[1]/volume*16);
+    polarconfig::dipole_z[i].push(sum[2]/volume*16);
 	}
 	double* pall=new double[3];
 	pall[0]=average(px);
@@ -180,6 +185,7 @@ double* displace_average_A(atom* A,atom* oxygen,double *p,int cell){
 			dist=distance(A+i,neighbor[j]+oxygen,p);
 			sum_together(sum,dist,3);
 		}
+    delete [] neighbor;
 		dx.push_back(sum[0]/12.0);
 		dy.push_back(sum[1]/12.0);
 		dz.push_back(sum[2]/12.0);
@@ -207,6 +213,7 @@ double* displace_average_Ca(atom* A,atom* oxygen,double *p,int cell){
 			dist=distance(A+i,neighbor[j]+oxygen,p);
 			sum_together(sum,dist,3);
 		}
+    delete [] neighbor;
 		dx.push_back(sum[0]/12.0);
 		dy.push_back(sum[1]/12.0);
 		dz.push_back(sum[2]/12.0);
@@ -235,6 +242,7 @@ double* displace_average_Ba(atom* A,atom* oxygen,double *p,int cell){
 			dist=distance(A+i,neighbor[t]+oxygen,p);
 			sum_together(sum,dist,3);
 		}
+    delete [] neighbor;
 		dx.push_back(sum[0]/12.0);
 		dy.push_back(sum[1]/12.0);
 		dz.push_back(sum[2]/12.0);
@@ -246,6 +254,161 @@ double* displace_average_Ba(atom* A,atom* oxygen,double *p,int cell){
 	dm[2]=average(dz);
 	return dm;
 }
+/*A more general way for Displacement Calculation*/
+double* displace_average_Asite(atom* A,atom* oxygen,double* p,int cell,char type_id){
+  std::list<double> dx;
+  std::list<double> dy;
+  std::list<double> dz;
+  int* neighbor;
+	double* sum=new double[3];
+  double* dist=new double[3];
+	for(size_t i=0;i<cell*cell*cell;i++){
+		if(A[i].type==type_id){
+		neighbor=neighbor_o_forA(i,cell);
+		for(size_t k=0;k<3;k++){
+			sum[k]=0.0;
+		}
+		for(size_t t=0;t<12;t++){
+			dist=distance(A+i,neighbor[t]+oxygen,p);
+			sum_together(sum,dist,3);
+		}
+    delete [] neighbor;
+		dx.push_back(sum[0]/12.0);
+		dy.push_back(sum[1]/12.0);
+		dz.push_back(sum[2]/12.0);
+		}
+	}
+  delete [] sum;
+	double* dm=new double[3];
+	dm[0]=average(dx);
+	dm[1]=average(dy);
+	dm[2]=average(dz);
+	return dm;
+}
+void displace_Asite_record(atom* A,atom* oxygen,double* p,int cell){
+  int* neighbor;
+  double* sum=new double[3];
+  double* dist=new double[3];
+	for(size_t i=0;i<cell*cell*cell;i++){
+		neighbor=neighbor_o_forA(i,cell);
+		for(size_t k=0;k<3;k++){
+			sum[k]=0.0;
+		}
+		for(size_t t=0;t<12;t++){
+			dist=distance(A+i,neighbor[t]+oxygen,p);
+			sum_together(sum,dist,3);
+      delete [] dist;
+		}
+    delete [] neighbor;
+		polarconfig::disp_Asite_x[i].push_back(sum[0]/12.0);
+		polarconfig::disp_Asite_y[i].push_back(sum[1]/12.0);
+		polarconfig::disp_Asite_z[i].push_back(sum[2]/12.0);
+	}
+  delete [] sum;
+}
+void displace_Bsite_record(atom* B,atom* oxygen,double* p,int cell){
+	int* neighbor;
+	double* sum=new double[3];
+  double* dist=new double[3];
+	for(size_t i=0;i<cell*cell*cell;i++){
+		neighbor=neighbor_o_forB(i,cell);
+		for(size_t k=0;k<3;k++){
+			sum[k]=0.0;
+		}
+		for(size_t j=0;j<6;j++){
+			dist=distance(B+i,neighbor[j]+oxygen,p);
+		  sum_together(sum,dist,3);
+      delete [] dist;
+		}
+    delete [] neighbor;
+		polarconfig::disp_Bsite_x[i].push_back(sum[0]/6.0);
+		polarconfig::disp_Bsite_y[i].push_back(sum[1]/6.0);
+		polarconfig::disp_Bsite_z[i].push_back(sum[2]/6.0);
+	}
+}
+double* displace_average_Bsite(atom* B,atom* oxygen,double* p,int cell,char type_id){
+	std::list<double> dx;
+	std::list<double> dy;
+	std::list<double> dz;
+	int* neighbor;
+	double* dist;
+	double* sum=new double[3];
+	for(size_t i=0;i<cell*cell*cell;i++){
+    if(B[i].type==type_id){
+		neighbor=neighbor_o_forB(i,cell);
+		for(size_t k=0;k<3;k++){
+			sum[k]=0.0;
+		}
+		for(size_t j=0;j<6;j++){
+			dist=distance(B+i,neighbor[j]+oxygen,p);
+		  sum_together(sum,dist,3);
+		}
+		dx.push_back(sum[0]/6.0);
+		dy.push_back(sum[1]/6.0);
+		dz.push_back(sum[2]/6.0);
+    }
+	}
+	double* dm=new double[3];
+	dm[0]=average(dx);
+	dm[1]=average(dy);
+	dm[2]=average(dz);
+	return dm;
+}
+double displace_average_Asite_scalar(atom* A,atom* oxygen,double *p,int cell,char type_id){
+	std::list<double> dall;
+	int* neighbor;
+	double* dist;
+	double* sum=new double[3];
+	double all=0;
+	for(size_t i=0;i<cell*cell*cell;i++){
+		if(A[i].type==type_id){
+		neighbor=neighbor_o_forA(i,cell);
+		for(size_t k=0;k<3;k++){
+			sum[k]=0.0;
+		}
+		for(size_t j=0;j<12;j++){
+			dist=distance(A+i,neighbor[j]+oxygen,p);
+			sum_together(sum,dist,3);
+		}
+    delete [] neighbor;
+		all=0.0;
+		for(size_t j=0;j<3;j++){
+			all=all+sum[j]/12.0*sum[j]/12.0;
+		}
+		dall.push_back(sqrt(all));
+		}
+	}
+  delete [] sum;
+	return average(dall);
+}
+double displace_average_Bsite_scalar(atom* B,atom* oxygen,double* p,int cell,char type_id){
+	std::list<double> dall;
+	int* neighbor;
+	double* dist;
+	double all;
+	double* sum=new double[3];
+	for(size_t i=0;i<cell*cell*cell;i++){
+    if(B[i].type==type_id){
+		neighbor=neighbor_o_forB(i,cell);
+		for(size_t k=0;k<3;k++){
+			sum[k]=0.0;
+		}
+		for(size_t j=0;j<6;j++){
+			dist=distance(B+i,neighbor[j]+oxygen,p);
+		  sum_together(sum,dist,3);
+		}
+    delete [] neighbor;
+		all=0.0;
+		for(size_t k=0;k<3;k++){
+			all=all+sum[k]/6.0*sum[k]/6.0;
+		}
+		dall.push_back(sqrt(all));
+    }
+	}
+  delete [] sum;
+	return average(dall);
+}
+/*End General way of doing this*/
 //compute the angle a---b----c
 double tiltangle(atom* a,atom* b,atom* c,double* p){
 	double ab=far(a,b,p);
@@ -398,7 +561,6 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
 			polarconfig::disp_allca_y.push_back(dispca[1]);
 			polarconfig::disp_allca_z.push_back(dispca[2]);
 			polar=polar_average(A,B,oxygen,period,cell);
-			//sort(polar,3);
 			polarconfig::px.push_back(polar[0]);
 			polarconfig::py.push_back(polar[1]);
 			polarconfig::pz.push_back(polar[2]);
@@ -436,7 +598,6 @@ double dielectric(double polarvar,double volume,double temp){
 	return 1e-30/(1.38*1e-23*8.85*1e-12)*polarvar*volume/temp;
 	/*1e-30 is to convert the unit of A^3 to m^3
 	 *1.38*1e-23 is kb boltzmann constant.
-	 *8.85*1e-12 is the dielectric constant in vaccum.
 	 * */
 }
 void outpolar(){
@@ -498,4 +659,26 @@ void outpolar(){
 	fileout<<dx<<" "<<dy<<" "<<dz<<std::endl;
 	fileout<<(dx+dy+dz)/3.0<<std::endl;
 	fileout.close();
+  fileout.open("Asite.txt",std::fstream::out);
+  for(size_t i=0;i<polarconfig::cell*polarconfig::cell*polarconfig::cell;i++){
+    fileout<<average(disp_Asite_x[i])<<" "<<average(disp_Asite_y[i])<<" "<<average(disp_Asite_z[i])<<std::endl;
+  }
+  fileout.close();
+  fileout.open("Bsite.txt",std::fstream::out);
+  for(size_t i=0;i<polarconfig::cell*polarconfig::cell*polarconfig::cell;i++){
+    fileout<<average(disp_Bsite_x[i])<<" "<<average(disp_Bsite_y[i])<<" "<<average(disp_Bsite_z[i])<<std::endl;
+  }
+  fileout.close();
+  std::cout<<polarconfig::dipole_x[0].size()<<" "<<polarconfig::dipole_y[0].size()<<" "<<polarconfig::dipole_z[0].size()<<std::endl;
+  fileout.open("domain.txt",std::fstream::out);
+  size_t length=polarconfig::dipole_x[0].size();
+  for(size_t i=0;i<length;i++){
+  for(size_t j=0;j<polarconfig::cell*polarconfig::cell*polarconfig::cell;j++){
+  fileout<<polarconfig::dipole_x[j].front()<<" "<<polarconfig::dipole_y[j].front()<<" "<<polarconfig::dipole_z[j].front()<<std::endl;
+  dipole_x[j].pop();
+  dipole_y[j].pop();
+  dipole_z[j].pop();
+  }
+  }
+  fileout.close();
 }
