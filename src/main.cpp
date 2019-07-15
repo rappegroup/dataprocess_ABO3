@@ -82,6 +82,7 @@ int main(int argc,char** argv){
 	size_t signal=0;
 	for(std::string line;getline(dump,line);){
 		if(line.find(la_pattern)!=std::string::npos){
+			std::cout<<signal++<<std::endl;
 			for(size_t i=0;i<3;i++){
 			dump>>x1;
 			dump>>x2;

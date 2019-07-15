@@ -146,7 +146,9 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 				dist[k]=dist[k]*((oxygen+neighbor[j])->charge[k])/2.0;
 			}
 			sum_together(sum,dist,3);
+			delete [] dist;
 		}
+		delete [] neighbor;
 		neighbor=neighbor_A_forB(i,cell);
 		for(size_t j=0;j<8;j++){
 			dist=distance(B+i,A+neighbor[j],p);
@@ -155,6 +157,7 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 				dist[k]=dist[k]*((A+neighbor[j])->charge[k])/8.0;
 			}
 			sum_together(sum,dist,3);
+			delete [] dist;
 		}
 		px.push_back(sum[0]/volume*16);//16 is aim at converting the units from e to C
 		py.push_back(sum[1]/volume*16);//16 is aim at converting the units from e to C
@@ -162,6 +165,7 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
     polarconfig::dipole_x[i].push(sum[0]/volume*16);
     polarconfig::dipole_y[i].push(sum[1]/volume*16);
     polarconfig::dipole_z[i].push(sum[2]/volume*16);
+		delete [] neighbor;
 	}
 	double* pall=new double[3];
 	pall[0]=average(px);
@@ -212,6 +216,7 @@ double* displace_average_Ca(atom* A,atom* oxygen,double *p,int cell){
 		for(size_t j=0;j<12;j++){
 			dist=distance(A+i,neighbor[j]+oxygen,p);
 			sum_together(sum,dist,3);
+			delete [] dist;
 		}
     delete [] neighbor;
 		dx.push_back(sum[0]/12.0);
@@ -241,6 +246,7 @@ double* displace_average_Ba(atom* A,atom* oxygen,double *p,int cell){
 		for(size_t t=0;t<12;t++){
 			dist=distance(A+i,neighbor[t]+oxygen,p);
 			sum_together(sum,dist,3);
+			delete [] dist;
 		}
     delete [] neighbor;
 		dx.push_back(sum[0]/12.0);
@@ -440,14 +446,17 @@ double displace_average_Ca_scalar(atom* A,atom* oxygen,double *p,int cell){
 		for(size_t j=0;j<12;j++){
 			dist=distance(A+i,neighbor[j]+oxygen,p);
 			sum_together(sum,dist,3);
+			delete [] dist;
 		}
 		all=0.0;
 		for(size_t j=0;j<3;j++){
 			all=all+sum[j]/12.0*sum[j]/12.0;
 		}
 		dall.push_back(sqrt(all));
+		delete [] neighbor;
 		}
 	}
+	delete [] sum;
 	return average(dall);
 }
 double displace_average_Ba_scalar(atom* A,atom* oxygen,double *p,int cell){
@@ -465,12 +474,14 @@ double displace_average_Ba_scalar(atom* A,atom* oxygen,double *p,int cell){
 		for(size_t j=0;j<12;j++){
 			dist=distance(A+i,neighbor[j]+oxygen,p);
 			sum_together(sum,dist,3);
+			delete [] dist;
 		}
 		all=0.0;
 		for(size_t j=0;j<3;j++){
 			all=all+sum[j]/12.0*sum[j]/12.0;
 		}
 		dall.push_back(sqrt(all));
+		delete [] neighbor;
 		}
 	}
 	return average(dall);
@@ -489,13 +500,16 @@ double displace_average_B_scalar(atom* B,atom* oxygen,double* p,int cell){
 		for(size_t j=0;j<6;j++){
 			dist=distance(B+i,neighbor[j]+oxygen,p);
 		  sum_together(sum,dist,3);
+			delete [] dist;
 		}
 		all=0.0;
 		for(size_t k=0;k<3;k++){
 			all=all+sum[k]/6.0*sum[k]/6.0;
 		}
+		delete [] neighbor;
 		dall.push_back(sqrt(all));
 	}
+	delete [] sum;
 	return average(dall);
 }
 double* displace_average_B(atom* B,atom* oxygen,double* p,int cell){
@@ -513,11 +527,14 @@ double* displace_average_B(atom* B,atom* oxygen,double* p,int cell){
 		for(size_t j=0;j<6;j++){
 			dist=distance(B+i,neighbor[j]+oxygen,p);
 		  sum_together(sum,dist,3);
+			delete [] dist;
 		}
 		dx.push_back(sum[0]/6.0);
 		dy.push_back(sum[1]/6.0);
 		dz.push_back(sum[2]/6.0);
+		delete [] neighbor;
 	}
+	delete [] sum;
 	double* dm=new double[3];
 	dm[0]=average(dx);
 	dm[1]=average(dy);
@@ -570,6 +587,7 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
 				a=changeback(index[0],index[1],index[2],cell);
 				b=changeback(index[0],index[1],index[2]+1,cell);
 				c=changeback(index[0],index[1],index[2]+2,cell);
+				delete [] index;
 				angle=tiltangle(a+oxygen,b+oxygen,c+oxygen,period);
 				polarconfig::tilt_angle.push_back(angle);
 				polarconfig::tilt_angle_one.push_back(angle);
@@ -579,6 +597,7 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
 				a=changeback(index[0],index[1],index[2],cell);
 				b=changeback(index[0],index[1]+1,index[2],cell);
 				c=changeback(index[0],index[1]+2,index[2],cell);
+				delete [] index;
 				angle=tiltangle(cell*cell*cell+a+oxygen,cell*cell*cell+b+oxygen,c+oxygen+cell*cell*cell,period);
 				polarconfig::tilt_angle.push_back(angle);
 				polarconfig::tilt_angle_two.push_back(angle);
@@ -588,6 +607,7 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
 				a=changeback(index[0],index[1],index[2],cell);
 				b=changeback(index[0]+1,index[1],index[2],cell);
 				c=changeback(index[0]+2,index[1],index[2],cell);
+				delete [] index;
 				angle=tiltangle(2*cell*cell*cell+a+oxygen,2*cell*cell*cell+b+oxygen,c+oxygen+2*cell*cell*cell,period);
 				polarconfig::tilt_angle.push_back(angle);
 				polarconfig::tilt_angle_three.push_back(angle);
