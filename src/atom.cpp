@@ -7,6 +7,8 @@
 #include <new>
 #include <map>
 #include <list>
+#include <math.h>
+#include <mpi.h>
 //a=origin,b=end
 double* distance(atom* a,atom* b,double* p){
 	double* dist=new double[3];
@@ -116,6 +118,13 @@ double average(std::list<double> &input){
 	}
 	return sum/input.size();
 }
+double sum_together(std::list<double> &input){
+  double sum=0.0;
+  for(std::list<double>::iterator a=input.begin();a!=input.end();a++){
+    sum=sum+*a;
+  }
+  return sum;
+}
 double variance(std::list<double> &input){
 	double sum=0.0;
 	double ave=average(input);
@@ -135,7 +144,15 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 	int* neighbor;
 	double* dist;
 	double* sum=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+  int i=0;
+	for(size_t layer=0;layer<MPI_LOOP_COUNT;i++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
 		neighbor=neighbor_o_forB(i,cell);
 		for(size_t k=0;k<3;k++){
 			sum[k]=0.0;
@@ -158,107 +175,23 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 			}
 			sum_together(sum,dist,3);
 			delete [] dist;
-		}
+      }
 		px.push_back(sum[0]/volume*16);//16 is aim at converting the units from e to C
 		py.push_back(sum[1]/volume*16);//16 is aim at converting the units from e to C
 		pz.push_back(sum[2]/volume*16);//16 is aim at converting the units from e to C
-    polarconfig::dipole_x[i].push(sum[0]/volume*16);
-    polarconfig::dipole_y[i].push(sum[1]/volume*16);
-    polarconfig::dipole_z[i].push(sum[2]/volume*16);
 		delete [] neighbor;
+    }
 	}
-	double* pall=new double[3];
-	pall[0]=average(px);
-	pall[1]=average(py);
-	pall[2]=average(pz);
-	return pall;
-}
-double* displace_average_A(atom* A,atom* oxygen,double *p,int cell){
-	std::list<double> dx;
-	std::list<double> dy;
-	std::list<double> dz;
-	int* neighbor;
-	double* dist;
-	double* sum=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
-		neighbor=neighbor_o_forA(i,cell);
-		for(size_t k=0;k<3;k++){
-			sum[k]=0.0;
-		}
-		for(size_t j=0;j<12;j++){
-			dist=distance(A+i,neighbor[j]+oxygen,p);
-			sum_together(sum,dist,3);
-		}
-    delete [] neighbor;
-		dx.push_back(sum[0]/12.0);
-		dy.push_back(sum[1]/12.0);
-		dz.push_back(sum[2]/12.0);
-	}
-	double* dm=new double[3];
-	dm[0]=average(dx);
-	dm[1]=average(dy);
-	dm[2]=average(dz);
-	return dm;
-}
-double* displace_average_Ca(atom* A,atom* oxygen,double *p,int cell){
-	std::list<double> dx;
-	std::list<double> dy;
-	std::list<double> dz;
-	int* neighbor;
-	double* dist;
-	double* sum=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
-		if(A[i].type=='c'){
-		neighbor=neighbor_o_forA(i,cell);
-		for(size_t k=0;k<3;k++){
-			sum[k]=0.0;
-		}
-		for(size_t j=0;j<12;j++){
-			dist=distance(A+i,neighbor[j]+oxygen,p);
-			sum_together(sum,dist,3);
-			delete [] dist;
-		}
-    delete [] neighbor;
-		dx.push_back(sum[0]/12.0);
-		dy.push_back(sum[1]/12.0);
-		dz.push_back(sum[2]/12.0);
-		}
-	}
-	double* dm=new double[3];
-	dm[0]=average(dx);
-	dm[1]=average(dy);
-	dm[2]=average(dz);
-	return dm;
-}
-double* displace_average_Ba(atom* A,atom* oxygen,double *p,int cell){
-	std::list<double> dx;
-	std::list<double> dy;
-	std::list<double> dz;
-	int* neighbor;
-	double* dist;
-	double* sum=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
-		if(A[i].type=='b'){
-		neighbor=neighbor_o_forA(i,cell);
-		for(size_t k=0;k<3;k++){
-			sum[k]=0.0;
-		}
-		for(size_t t=0;t<12;t++){
-			dist=distance(A+i,neighbor[t]+oxygen,p);
-			sum_together(sum,dist,3);
-			delete [] dist;
-		}
-    delete [] neighbor;
-		dx.push_back(sum[0]/12.0);
-		dy.push_back(sum[1]/12.0);
-		dz.push_back(sum[2]/12.0);
-		}
-	}
-	double* dm=new double[3];
-	dm[0]=average(dx);
-	dm[1]=average(dy);
-	dm[2]=average(dz);
-	return dm;
+  sum[0]=sum_together(px);
+  sum[1]=sum_together(py);
+  sum[2]=sum_together(pz);
+	double* reduce=new double[3];
+  MPI_Reduce(sum,reduce,3,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  delete [] sum;
+  for(size_t i=0;i<3;i++){
+    reduce[i]=reduce[i]/cell/cell/cell;
+  }
+	return reduce;
 }
 /*A more general way for Displacement Calculation*/
 double* displace_average_Asite(atom* A,atom* oxygen,double* p,int cell,char type_id){
@@ -268,8 +201,18 @@ double* displace_average_Asite(atom* A,atom* oxygen,double* p,int cell,char type
   int* neighbor;
 	double* sum=new double[3];
   double* dist=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+  int i=0;
+  int count_type=0;
+	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
 		if(A[i].type==type_id){
+    count_type=count_type+1;
 		neighbor=neighbor_o_forA(i,cell);
 		for(size_t k=0;k<3;k++){
 			sum[k]=0.0;
@@ -283,54 +226,22 @@ double* displace_average_Asite(atom* A,atom* oxygen,double* p,int cell,char type
 		dy.push_back(sum[1]/12.0);
 		dz.push_back(sum[2]/12.0);
 		}
+    }
 	}
+  int total_count=0;
+  MPI_Reduce(&count_type,&total_count,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   delete [] sum;
 	double* dm=new double[3];
-	dm[0]=average(dx);
-	dm[1]=average(dy);
-	dm[2]=average(dz);
-	return dm;
-}
-void displace_Asite_record(atom* A,atom* oxygen,double* p,int cell){
-  int* neighbor;
-  double* sum=new double[3];
-  double* dist=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
-		neighbor=neighbor_o_forA(i,cell);
-		for(size_t k=0;k<3;k++){
-			sum[k]=0.0;
-		}
-		for(size_t t=0;t<12;t++){
-			dist=distance(A+i,neighbor[t]+oxygen,p);
-			sum_together(sum,dist,3);
-      delete [] dist;
-		}
-    delete [] neighbor;
-		polarconfig::disp_Asite_x[i].push_back(sum[0]/12.0);
-		polarconfig::disp_Asite_y[i].push_back(sum[1]/12.0);
-		polarconfig::disp_Asite_z[i].push_back(sum[2]/12.0);
-	}
-  delete [] sum;
-}
-void displace_Bsite_record(atom* B,atom* oxygen,double* p,int cell){
-	int* neighbor;
-	double* sum=new double[3];
-  double* dist=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
-		neighbor=neighbor_o_forB(i,cell);
-		for(size_t k=0;k<3;k++){
-			sum[k]=0.0;
-		}
-		for(size_t j=0;j<6;j++){
-			dist=distance(B+i,neighbor[j]+oxygen,p);
-		  sum_together(sum,dist,3);
-      delete [] dist;
-		}
-    delete [] neighbor;
-		polarconfig::disp_Bsite_x[i].push_back(sum[0]/6.0);
-		polarconfig::disp_Bsite_y[i].push_back(sum[1]/6.0);
-		polarconfig::disp_Bsite_z[i].push_back(sum[2]/6.0);
-	}
+	dm[0]=sum_together(dx);
+	dm[1]=sum_together(dy);
+	dm[2]=sum_together(dz);
+  double* reduce=new double [3];
+  MPI_Reduce(dm,reduce,3,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  delete [] dm;
+  for(size_t i=0;i<3;i++){
+    reduce[i]=reduce[i]/total_count;
+  }
+	return reduce;
 }
 double* displace_average_Bsite(atom* B,atom* oxygen,double* p,int cell,char type_id){
 	std::list<double> dx;
@@ -339,8 +250,18 @@ double* displace_average_Bsite(atom* B,atom* oxygen,double* p,int cell,char type
 	int* neighbor;
 	double* dist;
 	double* sum=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+  int i=0;
+  int count_type=0;
+	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
     if(B[i].type==type_id){
+    count_type=count_type+1;
 		neighbor=neighbor_o_forB(i,cell);
 		for(size_t k=0;k<3;k++){
 			sum[k]=0.0;
@@ -353,12 +274,21 @@ double* displace_average_Bsite(atom* B,atom* oxygen,double* p,int cell,char type
 		dy.push_back(sum[1]/6.0);
 		dz.push_back(sum[2]/6.0);
     }
+    }
 	}
+  int total_count=0;
+  MPI_Reduce(&count_type,&total_count,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
 	double* dm=new double[3];
-	dm[0]=average(dx);
-	dm[1]=average(dy);
-	dm[2]=average(dz);
-	return dm;
+	dm[0]=sum_together(dx);
+	dm[1]=sum_together(dy);
+	dm[2]=sum_together(dz);
+  double* reduce=new double [3];
+  MPI_Reduce(dm,reduce,3,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  for(size_t i=0;i<3;i++){
+    reduce[i]=reduce[i]/total_count;
+  }
+  delete [] dm;
+	return reduce;
 }
 double displace_average_Asite_scalar(atom* A,atom* oxygen,double *p,int cell,char type_id){
 	std::list<double> dall;
@@ -366,8 +296,18 @@ double displace_average_Asite_scalar(atom* A,atom* oxygen,double *p,int cell,cha
 	double* dist;
 	double* sum=new double[3];
 	double all=0;
-	for(size_t i=0;i<cell*cell*cell;i++){
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+  int i=0;
+  int count_type=0;
+	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
 		if(A[i].type==type_id){
+    count_type=count_type+1;
 		neighbor=neighbor_o_forA(i,cell);
 		for(size_t k=0;k<3;k++){
 			sum[k]=0.0;
@@ -383,9 +323,16 @@ double displace_average_Asite_scalar(atom* A,atom* oxygen,double *p,int cell,cha
 		}
 		dall.push_back(sqrt(all));
 		}
+    }
 	}
+  int total_count=0;
+  MPI_Reduce(&count_type,&total_count,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  double dsum=sum_together(dall);
+  double reduce_dall;
+  MPI_Reduce(&dsum,&reduce_dall,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   delete [] sum;
-	return average(dall);
+  reduce_dall=reduce_dall/total_count;
+	return reduce_dall;
 }
 double displace_average_Bsite_scalar(atom* B,atom* oxygen,double* p,int cell,char type_id){
 	std::list<double> dall;
@@ -393,8 +340,18 @@ double displace_average_Bsite_scalar(atom* B,atom* oxygen,double* p,int cell,cha
 	double* dist;
 	double all;
 	double* sum=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+   int i=0;
+   int count_type=0;
+	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
     if(B[i].type==type_id){
+    count_type++;
 		neighbor=neighbor_o_forB(i,cell);
 		for(size_t k=0;k<3;k++){
 			sum[k]=0.0;
@@ -410,9 +367,16 @@ double displace_average_Bsite_scalar(atom* B,atom* oxygen,double* p,int cell,cha
 		}
 		dall.push_back(sqrt(all));
     }
+    }
 	}
+  int total_count=0;
+  MPI_Reduce(&count_type,&total_count,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  double dsum=sum_together(dall);
+  double reduce_dall=0;
+  MPI_Reduce(&dsum,&reduce_dall,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   delete [] sum;
-	return average(dall);
+  reduce_dall=reduce_dall/total_count;
+	return reduce_dall;
 }
 /*End General way of doing this*/
 //compute the angle a---b----c
@@ -422,7 +386,7 @@ double tiltangle(atom* a,atom* b,atom* c,double* p){
 	double ac=far(a,c,p);
 	double theta;
 	theta=(ab*ab+bc*bc-ac*ac)/2/ab/bc;
-	if(theta>-1 && theta<1){
+	if(theta>-1 && theta< 1){
 	   theta=(180-acos(theta)/(3.141592653)*180.0);
 	}
 	else{
@@ -430,69 +394,22 @@ double tiltangle(atom* a,atom* b,atom* c,double* p){
 	}
 	return fabs(theta);
 }
-//giving the scalar average version of this code
-double displace_average_Ca_scalar(atom* A,atom* oxygen,double *p,int cell){
-	std::list<double> dall;
-	int* neighbor;
-	double* dist;
-	double* sum=new double[3];
-	double all=0;
-	for(size_t i=0;i<cell*cell*cell;i++){
-		if(A[i].type=='c'){
-		neighbor=neighbor_o_forA(i,cell);
-		for(size_t k=0;k<3;k++){
-			sum[k]=0.0;
-		}
-		for(size_t j=0;j<12;j++){
-			dist=distance(A+i,neighbor[j]+oxygen,p);
-			sum_together(sum,dist,3);
-			delete [] dist;
-		}
-		all=0.0;
-		for(size_t j=0;j<3;j++){
-			all=all+sum[j]/12.0*sum[j]/12.0;
-		}
-		dall.push_back(sqrt(all));
-		delete [] neighbor;
-		}
-	}
-	delete [] sum;
-	return average(dall);
-}
-double displace_average_Ba_scalar(atom* A,atom* oxygen,double *p,int cell){
-	std::list<double> dall;
-	int* neighbor;
-	double* dist;
-	double* sum=new double[3];
-	double all=0;
-	for(size_t i=0;i<cell*cell*cell;i++){
-		if(A[i].type=='b'){
-		neighbor=neighbor_o_forA(i,cell);
-		for(size_t k=0;k<3;k++){
-			sum[k]=0.0;
-		}
-		for(size_t j=0;j<12;j++){
-			dist=distance(A+i,neighbor[j]+oxygen,p);
-			sum_together(sum,dist,3);
-			delete [] dist;
-		}
-		all=0.0;
-		for(size_t j=0;j<3;j++){
-			all=all+sum[j]/12.0*sum[j]/12.0;
-		}
-		dall.push_back(sqrt(all));
-		delete [] neighbor;
-		}
-	}
-	return average(dall);
-}
+
 double displace_average_B_scalar(atom* B,atom* oxygen,double* p,int cell){
 	std::list<double> dall;
 	int* neighbor;
 	double* dist;
 	double all;
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+  int i=0;
 	double* sum=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
+	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
 		neighbor=neighbor_o_forB(i,cell);
 		for(size_t k=0;k<3;k++){
 			sum[k]=0.0;
@@ -508,9 +425,14 @@ double displace_average_B_scalar(atom* B,atom* oxygen,double* p,int cell){
 		}
 		delete [] neighbor;
 		dall.push_back(sqrt(all));
+    }
 	}
+  double displace_all;
+  double displace_reduce;
+  displace_all=sum_together(dall);
+  MPI_Reduce(&displace_all,&displace_reduce,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
 	delete [] sum;
-	return average(dall);
+	return displace_reduce/cell/cell/cell;
 }
 double* displace_average_B(atom* B,atom* oxygen,double* p,int cell){
 	std::list<double> dx;
@@ -519,7 +441,15 @@ double* displace_average_B(atom* B,atom* oxygen,double* p,int cell){
 	int* neighbor;
 	double* dist;
 	double* sum=new double[3];
-	for(size_t i=0;i<cell*cell*cell;i++){
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+	int i=0;
+  for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
 		neighbor=neighbor_o_forB(i,cell);
 		for(size_t k=0;k<3;k++){
 			sum[k]=0.0;
@@ -533,13 +463,18 @@ double* displace_average_B(atom* B,atom* oxygen,double* p,int cell){
 		dy.push_back(sum[1]/6.0);
 		dz.push_back(sum[2]/6.0);
 		delete [] neighbor;
+    }
 	}
+  sum[0]=sum_together(dx);
+  sum[1]=sum_together(dy);
+  sum[2]=sum_together(dz);
+  double* reduce=new double[3];
+  MPI_Reduce(sum,reduce,3,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
 	delete [] sum;
-	double* dm=new double[3];
-	dm[0]=average(dx);
-	dm[1]=average(dy);
-	dm[2]=average(dz);
-	return dm;
+  for(size_t i=0;i<3;i++){
+    reduce[i]=reduce[i]/cell/cell/cell;
+  }
+	return reduce;
 }
 double norm(double* p,int dim){
     double sum=0.0;
@@ -565,53 +500,71 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
 			polarconfig::disp_allB_x.push_back(dispB[0]);
 			polarconfig::disp_allB_y.push_back(dispB[1]);
 			polarconfig::disp_allB_z.push_back(dispB[2]);
-			dispba=displace_average_Ba(A,oxygen,period,cell);
-			disp_scalar=displace_average_Ba_scalar(A,oxygen,period,cell);
-			polarconfig::disp_ba_scalar.push_back(disp_scalar);
-			polarconfig::disp_allba_x.push_back(dispba[0]);
-			polarconfig::disp_allba_y.push_back(dispba[1]);
-			polarconfig::disp_allba_z.push_back(dispba[2]);
-			dispca=displace_average_Ca(A,oxygen,period,cell);
-			disp_scalar=displace_average_Ca_scalar(A,oxygen,period,cell);
-			polarconfig::disp_ca_scalar.push_back(disp_scalar);
-			polarconfig::disp_allca_x.push_back(dispca[0]);
-			polarconfig::disp_allca_y.push_back(dispca[1]);
-			polarconfig::disp_allca_z.push_back(dispca[2]);
-			polar=polar_average(A,B,oxygen,period,cell);
+		  polar=polar_average(A,B,oxygen,period,cell);
 			polarconfig::px.push_back(polar[0]);
 			polarconfig::py.push_back(polar[1]);
 			polarconfig::pz.push_back(polar[2]);
 			//compute the tilt angle now;
-			for(size_t i=0;i<cell*cell*cell;i++){
+      MPI_Barrier(MPI_COMM_WORLD);
+      int world_rank;
+      int world_size;
+      MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+      MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+      int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+      int i=0; 
+       int count_type=0;
+			for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+        i=layer*world_size+world_rank;
+        if(i<cell*cell*cell){
 				index=changeindex(i,cell);
 				a=changeback(index[0],index[1],index[2],cell);
 				b=changeback(index[0],index[1],index[2]+1,cell);
 				c=changeback(index[0],index[1],index[2]+2,cell);
 				delete [] index;
 				angle=tiltangle(a+oxygen,b+oxygen,c+oxygen,period);
-				polarconfig::tilt_angle.push_back(angle);
 				polarconfig::tilt_angle_one.push_back(angle);
+        }
 			}
-			for(size_t i=0;i<cell*cell*cell;i++){
+      double tilt_local=sum_together(polarconfig::tilt_angle_one);
+      double tilt_angle_one_sum;
+      MPI_Reduce(&tilt_local,&tilt_angle_one_sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      tilt_angle_one_sum=tilt_angle_one_sum/cell/cell/cell;
+			for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+        i=layer*world_size+world_rank;
+        if(i<cell*cell*cell){
 				index=changeindex(i,cell);
 				a=changeback(index[0],index[1],index[2],cell);
 				b=changeback(index[0],index[1]+1,index[2],cell);
 				c=changeback(index[0],index[1]+2,index[2],cell);
 				delete [] index;
 				angle=tiltangle(cell*cell*cell+a+oxygen,cell*cell*cell+b+oxygen,c+oxygen+cell*cell*cell,period);
-				polarconfig::tilt_angle.push_back(angle);
 				polarconfig::tilt_angle_two.push_back(angle);
+        }
 			}
-		for(size_t i=0;i<cell*cell*cell;i++){
+      tilt_local=sum_together(polarconfig::tilt_angle_two);
+      double tilt_angle_two_sum;
+      MPI_Reduce(&tilt_local,&tilt_angle_two_sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      tilt_angle_two_sum=tilt_angle_two_sum/cell/cell/cell;
+		for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+        i=layer*world_size+world_rank;
+        if(i<cell*cell*cell){
 				index=changeindex(i,cell);
 				a=changeback(index[0],index[1],index[2],cell);
 				b=changeback(index[0]+1,index[1],index[2],cell);
 				c=changeback(index[0]+2,index[1],index[2],cell);
 				delete [] index;
 				angle=tiltangle(2*cell*cell*cell+a+oxygen,2*cell*cell*cell+b+oxygen,c+oxygen+2*cell*cell*cell,period);
-				polarconfig::tilt_angle.push_back(angle);
 				polarconfig::tilt_angle_three.push_back(angle);
 			}
+      }
+      tilt_local=sum_together(polarconfig::tilt_angle_three);
+      double tilt_angle_three_sum;
+      MPI_Reduce(&tilt_local,&tilt_angle_three_sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      tilt_angle_three_sum=tilt_angle_three_sum/cell/cell/cell;
+      tilt_angle_three_sum=tilt_angle_three_sum/cell/cell/cell;
+      polarconfig::tilt_one_ave=tilt_angle_one_sum;
+      polarconfig::tilt_two_ave=tilt_angle_two_sum;
+      polarconfig::tilt_three_ave=tilt_angle_three_sum;
 }
 /*here polarvar are in units of (e/A^3)^2,volume are in units of A^3,temperature are in units of K*/
 double dielectric(double polarvar,double volume,double temp){
@@ -624,45 +577,35 @@ void outpolar(){
   using namespace polarconfig;
   std::fstream fileout;
 	double lx,ly,lz;
-	lx=average(la_x);
-	ly=average(la_y);
-	lz=average(la_z);
+	lx=average(polarconfig::la_x);
+	ly=average(polarconfig::la_y);
+	lz=average(polarconfig::la_z);
 	fileout.open("result.txt",std::fstream::out);
 	fileout<<"the average lattice constant is:"<<std::endl;
 	fileout<<lx<<" "<<ly<<" "<<lz<<std::endl;
 	fileout<<"the average B site cations displacement is:"<<std::endl;
-	fileout<<fabs(average(disp_allB_x))<<" "<<fabs(average(disp_allB_y))<<" "<<fabs(average(disp_allB_z))<<std::endl;
-	fileout<<"the average Asite one displacement is:"<<std::endl;
-	fileout<<fabs(average(disp_allba_x))<<" "<<fabs(average(disp_allba_y))<<" "<<fabs(average(disp_allba_z))<<std::endl;
-	fileout<<"the average Asite two displacement is:"<<std::endl;
-	fileout<<fabs(average(disp_allca_x))<<" "<<fabs(average(disp_allca_y))<<" "<<fabs(average(disp_allca_z))<<std::endl;
-	fileout<<"the average O6 tilt angle is:"<<std::endl;
-	fileout<<(fabs(average(tilt_angle)))<<std::endl;
+	fileout<<fabs(average(polarconfig::disp_allB_x))<<" "<<fabs(average(polarconfig::disp_allB_y))<<" "<<fabs(average(polarconfig::disp_allB_z))<<std::endl;
 	fileout<<"the averaget O6 tilt angle in three direction is:"<<std::endl;
-	fileout<<(fabs(average(tilt_angle_one)))<<" "<<fabs(average(tilt_angle_two))<<" "<<fabs(average(tilt_angle_three))<<std::endl;
+	fileout<<fabs(polarconfig::tilt_one_ave)<<" "<<fabs(polarconfig::tilt_two_ave)<<" "<<fabs(polarconfig::tilt_two_ave)<<std::endl;
 	fileout<<"the scalar average B site displacement is:"<<std::endl;
-	fileout<<average(disp_B_scalar)<<std::endl;
-	fileout<<"the scalar average Asite one dispalcement is:"<<std::endl;
-	fileout<<average(disp_ba_scalar)<<std::endl;
-	fileout<<"the scalar average Asite two displacement is:"<<std::endl;
-	fileout<<average(disp_ca_scalar)<<std::endl;
+	fileout<<average(polarconfig::disp_B_scalar)<<std::endl;
 	std::vector<double> pall(3,0.0);
 	std::vector<double> var(3,0.0);
-	pall[0]=std::fabs(average(px));
-	pall[1]=std::fabs(average(py));
-	pall[2]=std::fabs(average(pz));
+	pall[0]=std::fabs(average(polarconfig::px));
+	pall[1]=std::fabs(average(polarconfig::py));
+	pall[2]=std::fabs(average(polarconfig::pz));
 	std::fstream pout;
 	pout.open("polar.txt",std::fstream::out);
 	std::list<double>::iterator pyi=py.begin();
 	std::list<double>::iterator pzi=pz.begin();
-	for(std::list<double>::iterator pxi=px.begin();pxi!=px.end();pxi++){
+	for(std::list<double>::iterator pxi=polarconfig::px.begin();pxi!=polarconfig::px.end();pxi++){
 		pout<<*(pxi)<<" "<<*pyi<<" "<<*pzi<<std::endl;
 		pyi++;
 		pzi++;
 	}
-	var[0]=variance(px);
-	var[1]=variance(py);
-	var[2]=variance(pz);
+	var[0]=variance(polarconfig::px);
+	var[1]=variance(polarconfig::py);
+	var[2]=variance(polarconfig::pz);
 	std::map <double,double> good;
 	for(size_t i=0;i<3;i++){
 		good.insert(good.end(),std::pair <double,double> (pall[i],var[i]));
@@ -679,26 +622,5 @@ void outpolar(){
 	fileout<<dx<<" "<<dy<<" "<<dz<<std::endl;
 	fileout<<(dx+dy+dz)/3.0<<std::endl;
 	fileout.close();
-  fileout.open("Asite.txt",std::fstream::out);
-  for(size_t i=0;i<polarconfig::cell*polarconfig::cell*polarconfig::cell;i++){
-    fileout<<average(disp_Asite_x[i])<<" "<<average(disp_Asite_y[i])<<" "<<average(disp_Asite_z[i])<<std::endl;
-  }
-  fileout.close();
-  fileout.open("Bsite.txt",std::fstream::out);
-  for(size_t i=0;i<polarconfig::cell*polarconfig::cell*polarconfig::cell;i++){
-    fileout<<average(disp_Bsite_x[i])<<" "<<average(disp_Bsite_y[i])<<" "<<average(disp_Bsite_z[i])<<std::endl;
-  }
-  fileout.close();
-  std::cout<<polarconfig::dipole_x[0].size()<<" "<<polarconfig::dipole_y[0].size()<<" "<<polarconfig::dipole_z[0].size()<<std::endl;
-  fileout.open("domain.txt",std::fstream::out);
-  size_t length=polarconfig::dipole_x[0].size();
-  for(size_t i=0;i<length;i++){
-  for(size_t j=0;j<polarconfig::cell*polarconfig::cell*polarconfig::cell;j++){
-  fileout<<polarconfig::dipole_x[j].front()<<" "<<polarconfig::dipole_y[j].front()<<" "<<polarconfig::dipole_z[j].front()<<std::endl;
-  dipole_x[j].pop();
-  dipole_y[j].pop();
-  dipole_z[j].pop();
-  }
-  }
   fileout.close();
 }
