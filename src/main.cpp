@@ -30,6 +30,7 @@ int main(){
     info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature);
 	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
 	}
+  MPI_Bcast(&cell,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Bcast(&velocity_on,1,MPI_INT,0,MPI_COMM_WORLD);
