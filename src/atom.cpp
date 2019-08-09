@@ -150,7 +150,7 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
   int i=0;
-	for(size_t layer=0;layer<MPI_LOOP_COUNT;i++){
+	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
     i=layer*world_size+world_rank;
     if(i<cell*cell*cell){
 		neighbor=neighbor_o_forB(i,cell);
@@ -484,26 +484,26 @@ double norm(double* p,int dim){
     return sqrt(sum);
 }
 void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
-			double* dispba;
+		double* dispba;
 	    double* dispca;
 	    double* dispB;
-			double* polar;
-			double disp_scalar;
+		double* polar;
+		double disp_scalar;
     	int* index;
     	int a;
     	int b;
     	int c;
     	double angle;
 	    dispB=displace_average_B(B,oxygen,period,cell);
-			disp_scalar=displace_average_B_scalar(B,oxygen,period,cell);
-			polarconfig::disp_B_scalar.push_back(disp_scalar);
-			polarconfig::disp_allB_x.push_back(dispB[0]);
-			polarconfig::disp_allB_y.push_back(dispB[1]);
-			polarconfig::disp_allB_z.push_back(dispB[2]);
-		  polar=polar_average(A,B,oxygen,period,cell);
-			polarconfig::px.push_back(polar[0]);
-			polarconfig::py.push_back(polar[1]);
-			polarconfig::pz.push_back(polar[2]);
+		disp_scalar=displace_average_B_scalar(B,oxygen,period,cell);
+		polarconfig::disp_B_scalar.push_back(disp_scalar);
+		polarconfig::disp_allB_x.push_back(dispB[0]);
+		polarconfig::disp_allB_y.push_back(dispB[1]);
+		polarconfig::disp_allB_z.push_back(dispB[2]);
+		polar=polar_average(A,B,oxygen,period,cell);
+		polarconfig::px.push_back(polar[0]);
+		polarconfig::py.push_back(polar[1]);
+		polarconfig::pz.push_back(polar[2]);
 			//compute the tilt angle now;
       MPI_Barrier(MPI_COMM_WORLD);
       int world_rank;
@@ -513,7 +513,10 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
       int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
       int i=0; 
        int count_type=0;
-			for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+       std::list<double> tilt_angle_one;
+       std::list<double> tilt_angle_two;
+       std::list<double> tilt_angle_three;
+	  for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
         i=layer*world_size+world_rank;
         if(i<cell*cell*cell){
 				index=changeindex(i,cell);
@@ -522,10 +525,10 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
 				c=changeback(index[0],index[1],index[2]+2,cell);
 				delete [] index;
 				angle=tiltangle(a+oxygen,b+oxygen,c+oxygen,period);
-				polarconfig::tilt_angle_one.push_back(angle);
+				tilt_angle_one.push_back(angle);
         }
 			}
-      double tilt_local=sum_together(polarconfig::tilt_angle_one);
+      double tilt_local=sum_together(tilt_angle_one);
       double tilt_angle_one_sum;
       MPI_Reduce(&tilt_local,&tilt_angle_one_sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
       tilt_angle_one_sum=tilt_angle_one_sum/cell/cell/cell;
@@ -538,10 +541,10 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
 				c=changeback(index[0],index[1]+2,index[2],cell);
 				delete [] index;
 				angle=tiltangle(cell*cell*cell+a+oxygen,cell*cell*cell+b+oxygen,c+oxygen+cell*cell*cell,period);
-				polarconfig::tilt_angle_two.push_back(angle);
+				tilt_angle_two.push_back(angle);
         }
 			}
-      tilt_local=sum_together(polarconfig::tilt_angle_two);
+      tilt_local=sum_together(tilt_angle_two);
       double tilt_angle_two_sum;
       MPI_Reduce(&tilt_local,&tilt_angle_two_sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
       tilt_angle_two_sum=tilt_angle_two_sum/cell/cell/cell;
@@ -554,17 +557,19 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
 				c=changeback(index[0]+2,index[1],index[2],cell);
 				delete [] index;
 				angle=tiltangle(2*cell*cell*cell+a+oxygen,2*cell*cell*cell+b+oxygen,c+oxygen+2*cell*cell*cell,period);
-				polarconfig::tilt_angle_three.push_back(angle);
+				tilt_angle_three.push_back(angle);
 			}
       }
-      tilt_local=sum_together(polarconfig::tilt_angle_three);
+      tilt_local=sum_together(tilt_angle_three);
       double tilt_angle_three_sum;
       MPI_Reduce(&tilt_local,&tilt_angle_three_sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      tilt_angle_three_sum=tilt_angle_three_sum/cell/cell/cell;
       tilt_angle_three_sum=tilt_angle_three_sum/cell/cell/cell;
       polarconfig::tilt_one_ave=tilt_angle_one_sum;
       polarconfig::tilt_two_ave=tilt_angle_two_sum;
       polarconfig::tilt_three_ave=tilt_angle_three_sum;
+      polarconfig::tilt_angle_one.push_back(polarconfig::tilt_one_ave);
+      polarconfig::tilt_angle_two.push_back(polarconfig::tilt_two_ave);
+      polarconfig::tilt_angle_three.push_back(polarconfig::tilt_three_ave);
 }
 /*here polarvar are in units of (e/A^3)^2,volume are in units of A^3,temperature are in units of K*/
 double dielectric(double polarvar,double volume,double temp){

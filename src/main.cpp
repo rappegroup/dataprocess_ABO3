@@ -183,11 +183,13 @@ int main(){
       MPI_Barrier(MPI_COMM_WORLD);
       MPI_Bcast(&getnewframe,1,MPI_INT,0,MPI_COMM_WORLD);
       if(getnewframe==1){
+      MPI_Bcast(period,3,MPI_DOUBLE,0,MPI_COMM_WORLD);
       MPI_Bcast(A,cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
       MPI_Bcast(B,cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
       MPI_Bcast(oxygen,3*cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
+      MPI_Barrier(MPI_COMM_WORLD);
 			if(polarization_on){
-				//analyzepolar(A,B,oxygen,period,cell);
+				analyzepolar(A,B,oxygen,period,cell);
 			}
       getnewframe=0;
       }
