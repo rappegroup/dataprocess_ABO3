@@ -620,9 +620,10 @@ void outpolar(){
 	fileout<<"polarization variance is:"<<std::endl;
 	fileout<<good[pall[0]]<<" "<<good[pall[1]]<<" "<<good[pall[2]]<<std::endl;
 	fileout<<"the relative dielectric constant(epsilon0) is :"<<std::endl;
-	double dx=dielectric(good[pall[0]],lx*ly*lz*cell*cell*cell,temperature);
-	double dy=dielectric(good[pall[1]],lx*ly*lz*cell*cell*cell,temperature);
-	double dz=dielectric(good[pall[2]],lx*ly*lz*cell*cell*cell,temperature);
+    int cell=polarconfig::cell;
+	double dx=dielectric(good[pall[0]],lx*ly*lz*cell*cell*cell,polarconfig::temperature);
+	double dy=dielectric(good[pall[1]],lx*ly*lz*cell*cell*cell,polarconfig::temperature);
+	double dz=dielectric(good[pall[2]],lx*ly*lz*cell*cell*cell,polarconfig::temperature);
 	fileout<<dx<<" "<<dy<<" "<<dz<<std::endl;
 	fileout<<(dx+dy+dz)/3.0<<std::endl;
 	fileout.close();
