@@ -15,22 +15,27 @@
 #include <mpi.h>
 int main(){
 	//caculating the displacement for ABO_x3
-	int& cell=polarconfig::cell;
-	std::fstream dump;
-	std::fstream result;
-	std::fstream calist;
-	std::string dumpfile;
-	bool velocity_on=true;
-	bool polarization_on=true;
-	std::string calistfile;
-	info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature);
-	std::list<double*> ve_list;
-  int world_rank;
   MPI_Init(NULL,NULL);
+  int& cell=polarconfig::cell;
+  std::fstream dump;
+  std::fstream calist;
+  std::string dumpfile;
+  int velocity_on=1;
+  int polarization_on=1;
+  std::string calistfile;
+  int world_rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  std::list<double*> ve_list;
   if(world_rank==0){
+    info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature);
 	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
 	}
+  MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Bcast(&velocity_on,1,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Bcast(&polarization_on,1,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
   double* ve_temp;
 	size_t v_count=0;
   if(world_rank==0){
@@ -40,7 +45,7 @@ int main(){
 	atom* A=new atom[cell*cell*cell];
 	atom* B=new atom[cell*cell*cell];
 	atom* oxygen=new atom[3*cell*cell*cell];
-  clock_t begin=clock();
+    clock_t begin=clock();
 	for(size_t i=0;i<cell*cell*cell;i++){
 		A[i].type='b';
 		A[i].charge[0]=2.90;
@@ -86,12 +91,12 @@ int main(){
   MPI_Address(&atom_demo.tick,&displs[3]);
   for(int i=3;i>=0;i--){
     displs[i]=displs[i]-displs[0];
+    std::cout<<displs[i]<<std::endl;
   }
   types[0]=MPI_DOUBLE;
   types[1]=MPI_DOUBLE;
   types[2]=MPI_CHAR;
   types[3]=MPI_INT;
-  std::cout<<"I am here"<<std::endl;
   MPI_Type_struct(4,blockcounts,displs,types,&MPI_atom);
   MPI_Type_commit(&MPI_atom);
 	std::string la_pattern="ITEM: BOX BOUNDS pp pp pp";
@@ -178,12 +183,18 @@ int main(){
       else{
       //doing nothing, waiting for root processor finish reading.
       };
-      MPI_Barrier;
+      MPI_Barrier(MPI_COMM_WORLD);
       MPI_Bcast(&getnewframe,1,MPI_INT,0,MPI_COMM_WORLD);
+      std::cout<<"I am here zero"<<std::endl;
       if(getnewframe==1){
+      MPI_Barrier(MPI_COMM_WORLD);
       MPI_Bcast(A,cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
+      MPI_Barrier(MPI_COMM_WORLD);
+      std::cout<<"I am here one"<<std::endl;
       MPI_Bcast(B,cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
+      std::cout<<"I am here two"<<std::endl;
       MPI_Bcast(oxygen,3*cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
+      std::cout<<"I am here three"<<std::endl;
 			if(polarization_on){
 				//analyzepolar(A,B,oxygen,period,cell);
 			}

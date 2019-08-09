@@ -4,5 +4,5 @@
 #include <string>
 #include <vector>
 std::vector<std::string> split(std::string s,std::string delimiter);
-void info(int& cell,std::string& dumpfile,std::string& calistfile,bool& velocity_on,bool& polarization_on,double& temperature);
+void info(int& cell,std::string& dumpfile,std::string& calistfile,int& velocity_on,int& polarization_on,double& temperature);
 #endif
