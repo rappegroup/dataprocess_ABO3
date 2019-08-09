@@ -579,8 +579,7 @@ double dielectric(double polarvar,double volume,double temp){
 	 * */
 }
 void outpolar(){
-  using namespace polarconfig;
-  std::fstream fileout;
+    std::fstream fileout;
 	double lx,ly,lz;
 	lx=average(polarconfig::la_x);
 	ly=average(polarconfig::la_y);
@@ -601,8 +600,8 @@ void outpolar(){
 	pall[2]=std::fabs(average(polarconfig::pz));
 	std::fstream pout;
 	pout.open("polar.txt",std::fstream::out);
-	std::list<double>::iterator pyi=py.begin();
-	std::list<double>::iterator pzi=pz.begin();
+	std::list<double>::iterator pyi=polarconfig::py.begin();
+	std::list<double>::iterator pzi=polarconfig::pz.begin();
 	for(std::list<double>::iterator pxi=polarconfig::px.begin();pxi!=polarconfig::px.end();pxi++){
 		pout<<*(pxi)<<" "<<*pyi<<" "<<*pzi<<std::endl;
 		pyi++;
@@ -627,5 +626,5 @@ void outpolar(){
 	fileout<<dx<<" "<<dy<<" "<<dz<<std::endl;
 	fileout<<(dx+dy+dz)/3.0<<std::endl;
 	fileout.close();
-  fileout.close();
+    fileout.close();
 }

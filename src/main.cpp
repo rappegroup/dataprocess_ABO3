@@ -200,7 +200,9 @@ int main(){
   double use_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout<<"The total time spend is: "<<use_secs<<std::endl;
 	if(polarization_on){
-	//	outpolar();
+        if(world_rank==0){
+		outpolar();
+    	}
 	}
 	if(velocity_on){
 		autospeed(ve_list,cell);
