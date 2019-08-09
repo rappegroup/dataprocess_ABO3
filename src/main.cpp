@@ -32,11 +32,8 @@ int main(){
 	}
   MPI_Bcast(&cell,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
   MPI_Bcast(&velocity_on,1,MPI_INT,0,MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
   MPI_Bcast(&polarization_on,1,MPI_INT,0,MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
   double* ve_temp;
 	size_t v_count=0;
   if(world_rank==0){
@@ -92,7 +89,6 @@ int main(){
   MPI_Address(&atom_demo.tick,&displs[3]);
   for(int i=3;i>=0;i--){
     displs[i]=displs[i]-displs[0];
-    std::cout<<displs[i]<<std::endl;
   }
   types[0]=MPI_DOUBLE;
   types[1]=MPI_DOUBLE;
@@ -186,16 +182,10 @@ int main(){
       };
       MPI_Barrier(MPI_COMM_WORLD);
       MPI_Bcast(&getnewframe,1,MPI_INT,0,MPI_COMM_WORLD);
-      std::cout<<"I am here zero"<<std::endl;
       if(getnewframe==1){
-      MPI_Barrier(MPI_COMM_WORLD);
       MPI_Bcast(A,cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
-      MPI_Barrier(MPI_COMM_WORLD);
-      std::cout<<"I am here one"<<std::endl;
       MPI_Bcast(B,cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
-      std::cout<<"I am here two"<<std::endl;
       MPI_Bcast(oxygen,3*cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
-      std::cout<<"I am here three"<<std::endl;
 			if(polarization_on){
 				//analyzepolar(A,B,oxygen,period,cell);
 			}

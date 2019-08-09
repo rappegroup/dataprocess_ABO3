@@ -1,7 +1,7 @@
 &ana.x
 filename=dump.xyz, 
-cell=10, 
+cell=30, 
 solution_list=cadata.txt, 
-auto_velocity=1, 
-polarization=0, 
+auto_velocity=0, 
+polarization=1, 
 /
