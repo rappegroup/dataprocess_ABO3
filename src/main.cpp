@@ -267,9 +267,6 @@ int main(){
     fs.close();
     std::system(("rm local_die"+std::to_string(i)+".txt").c_str());
     }
-   // std::sort(die_x.begin(),die_x.end());
-   // sort(die_y.begin(),die_y.end(),[](std::pair<int,double>& a,std::pair<int,double>& b)->bool{return a.first < b.first});
-   // sort(die_z.begin(),die_z.end(),[](std::pair<int,double>& a,std::pair<int,double>& b)->bool{return a.first < b.first});
     fs.open("all_local_die.txt",std::fstream::out);
     for(std::map<int,double>::iterator a=die_x.begin();a!=die_x.end();a++){
       fs<<a->first<<" "<<a->second<<std::endl;
