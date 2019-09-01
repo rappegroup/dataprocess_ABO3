@@ -20,6 +20,12 @@ namespace polarconfig
    extern std::list<double> px;
    extern std::list<double> py;
    extern std::list<double> pz;
+   extern std::vector<std::list<double> > px_local;
+   extern std::vector<std::list<double> > py_local;
+   extern std::vector<std::list<double> > pz_local;
+   extern std::vector<double> epsilon_x;
+   extern std::vector<double> epsilon_y;
+   extern std::vector<double> epsilon_z;
    extern double tilt_one_ave;
    extern double tilt_two_ave;
    extern double tilt_three_ave;

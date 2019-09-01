@@ -34,4 +34,5 @@ int* neighbor_A_forB(int index,int cell);
 double tiltangle(atom* a, atom* b,atom* c,double* p);
 void analyzepolar(atom* A,atom* B,atom* oxygen, double* period, int cell);
 void outpolar();
+void calculate_local_die();
 #endif

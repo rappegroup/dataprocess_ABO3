@@ -1,4 +1,4 @@
-CXX=mpicxx
+CXX=mpiicpc
 CXXFLAGS= -std=c++11
 DEPS= space.h atom.h interface.h polarconfig.h autospeed.h
 LIBPATH =

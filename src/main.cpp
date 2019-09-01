@@ -12,7 +12,10 @@
 #include "polarconfig.h"
 #include "autospeed.h"
 #include <queue>
+#include <list>
 #include <mpi.h>
+#include <sstream>
+#include <cstdlib>
 int main(){
 	//caculating the displacement for ABO_x3
   MPI_Init(NULL,NULL);
@@ -24,6 +27,7 @@ int main(){
   int polarization_on=1;
   std::string calistfile;
   int world_rank;
+  int world_size;
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   std::list<double*> ve_list;
   if(world_rank==0){
@@ -34,6 +38,19 @@ int main(){
   MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&velocity_on,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarization_on,1,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+  polarconfig::px_local.clear();
+  polarconfig::py_local.clear();
+  polarconfig::pz_local.clear();
+  for(size_t i=0;i<MPI_LOOP_COUNT;i++){
+    polarconfig::px_local.push_back(std::list<double>(0,0.0));
+    polarconfig::py_local.push_back(std::list<double>(0,0.0));
+    polarconfig::pz_local.push_back(std::list<double>(0,0.0));
+    polarconfig::epsilon_x.push_back(0.0);
+    polarconfig::epsilon_y.push_back(0.0);
+    polarconfig::epsilon_z.push_back(0.0);
+  }
   double* ve_temp;
 	size_t v_count=0;
   if(world_rank==0){
@@ -43,7 +60,7 @@ int main(){
 	atom* A=new atom[cell*cell*cell];
 	atom* B=new atom[cell*cell*cell];
 	atom* oxygen=new atom[3*cell*cell*cell];
-    clock_t begin=clock();
+  clock_t begin=clock();
 	for(size_t i=0;i<cell*cell*cell;i++){
 		A[i].type='b';
 		A[i].charge[0]=2.90;
@@ -117,6 +134,10 @@ int main(){
    else{
     }
    MPI_Bcast(&read_success,1,MPI_INT,0,MPI_COMM_WORLD);
+   MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+   if(signal==20){
+   break;
+   }
    if(read_success==1){
     //continue working on it;
    }
@@ -199,6 +220,8 @@ int main(){
   clock_t end=clock();
   double use_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout<<"The total time spend is: "<<use_secs<<std::endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+  calculate_local_die();
 	if(polarization_on){
         if(world_rank==0){
 		outpolar();
@@ -209,6 +232,53 @@ int main(){
 	}
 	dump.close();
 	calist.close();
+  MPI_Barrier(MPI_COMM_WORLD);
+  calculate_local_die();
+  std::fstream fs;
+  fs.open("local_die"+std::to_string(world_rank)+".txt",std::fstream::out);
+  for(size_t i=0;i<MPI_LOOP_COUNT;i++){
+    if(i*world_size+world_rank<cell*cell*cell){
+    fs<<i*world_size+world_rank<<" "<<polarconfig::epsilon_x[i]<<" "<<polarconfig::epsilon_y[i]<<" "<<polarconfig::epsilon_z[i]<<std::endl;
+    }
+  }
+  fs.close();
+  if(world_rank==0){
+    std::map<int,double> die_x;
+    std::map<int,double> die_y;
+    std::map<int,double> die_z;
+    int index;
+    double diex;
+    double diey;
+    double diez;
+    std::stringstream linestream;
+    for(size_t i=0;i<world_size;i++){
+    fs.open("local_die"+std::to_string(i)+".txt",std::fstream::in);
+    while(getline(fs,line)){
+    linestream.str(line);
+    linestream>>index;
+    linestream>>diex;
+    linestream>>diey;
+    linestream>>diez;
+    linestream.clear();
+    die_x.insert(std::pair<int,double>(index,diex));
+    die_y.insert(std::pair<int,double>(index,diey));
+    die_z.insert(std::pair<int,double>(index,diez));
+    }
+    fs.close();
+    std::system(("rm local_die"+std::to_string(i)+".txt").c_str());
+    }
+   // std::sort(die_x.begin(),die_x.end());
+   // sort(die_y.begin(),die_y.end(),[](std::pair<int,double>& a,std::pair<int,double>& b)->bool{return a.first < b.first});
+   // sort(die_z.begin(),die_z.end(),[](std::pair<int,double>& a,std::pair<int,double>& b)->bool{return a.first < b.first});
+    fs.open("all_local_die.txt",std::fstream::out);
+    for(std::map<int,double>::iterator a=die_x.begin();a!=die_x.end();a++){
+      fs<<a->first<<" "<<a->second<<std::endl;
+    }
+  }
+  else{
+  //doing nothing.
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
 	return 0;
 }

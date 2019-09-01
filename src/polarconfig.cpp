@@ -18,6 +18,12 @@ namespace polarconfig
  std::list<double> px;
  std::list<double> py;
  std::list<double> pz;
+ std::vector<std::list<double> > px_local;
+ std::vector<std::list<double> > py_local;
+ std::vector<std::list<double> > pz_local;
+ std::vector<double> epsilon_x;
+ std::vector<double> epsilon_y;
+ std::vector<double> epsilon_z;
  double tilt_one_ave;
  double tilt_two_ave;
  double tilt_three_ave;
