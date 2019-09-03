@@ -268,8 +268,12 @@ int main(){
     std::system(("rm local_die"+std::to_string(i)+".txt").c_str());
     }
     fs.open("all_local_die.txt",std::fstream::out);
+    std::map<int, double>::iterator b=die_y.begin();
+    std::map<int, double>::iterator c=die_z.begin();
     for(std::map<int,double>::iterator a=die_x.begin();a!=die_x.end();a++){
-      fs<<a->first<<" "<<a->second<<std::endl;
+      fs<<a->first<<" "<<a->second<<" "<<b->second<<" "<<c->second<<std::endl;
+      b++;
+      c++;
     }
   }
   else{
