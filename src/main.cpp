@@ -40,17 +40,6 @@ int main(){
   MPI_Bcast(&polarization_on,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
-  polarconfig::px_local.clear();
-  polarconfig::py_local.clear();
-  polarconfig::pz_local.clear();
-  for(size_t i=0;i<MPI_LOOP_COUNT;i++){
-    polarconfig::px_local.push_back(std::list<double>(0,0.0));
-    polarconfig::py_local.push_back(std::list<double>(0,0.0));
-    polarconfig::pz_local.push_back(std::list<double>(0,0.0));
-    polarconfig::epsilon_x.push_back(0.0);
-    polarconfig::epsilon_y.push_back(0.0);
-    polarconfig::epsilon_z.push_back(0.0);
-  }
   double* ve_temp;
 	size_t v_count=0;
   if(world_rank==0){
@@ -120,6 +109,7 @@ int main(){
 	size_t signal=0;
   int read_success;
   int getnewframe=0;
+  size_t read_bound=60000;
   std::string line="0";
 	do
    {
@@ -135,8 +125,9 @@ int main(){
     }
    MPI_Bcast(&read_success,1,MPI_INT,0,MPI_COMM_WORLD);
    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-   if(signal==20){
-   break;
+   if(signal==read_bound){
+    read_success=0;
+    MPI_Bcast(&read_success,1,MPI_INT,0,MPI_COMM_WORLD);
    }
    if(read_success==1){
     //continue working on it;
@@ -221,7 +212,6 @@ int main(){
   double use_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout<<"The total time spend is: "<<use_secs<<std::endl;
   MPI_Barrier(MPI_COMM_WORLD);
-  calculate_local_die();
 	if(polarization_on){
         if(world_rank==0){
 		outpolar();
@@ -232,53 +222,6 @@ int main(){
 	}
 	dump.close();
 	calist.close();
-  MPI_Barrier(MPI_COMM_WORLD);
-  calculate_local_die();
-  std::fstream fs;
-  fs.open("local_die"+std::to_string(world_rank)+".txt",std::fstream::out);
-  for(size_t i=0;i<MPI_LOOP_COUNT;i++){
-    if(i*world_size+world_rank<cell*cell*cell){
-    fs<<i*world_size+world_rank<<" "<<polarconfig::epsilon_x[i]<<" "<<polarconfig::epsilon_y[i]<<" "<<polarconfig::epsilon_z[i]<<std::endl;
-    }
-  }
-  fs.close();
-  if(world_rank==0){
-    std::map<int,double> die_x;
-    std::map<int,double> die_y;
-    std::map<int,double> die_z;
-    int index;
-    double diex;
-    double diey;
-    double diez;
-    std::stringstream linestream;
-    for(size_t i=0;i<world_size;i++){
-    fs.open("local_die"+std::to_string(i)+".txt",std::fstream::in);
-    while(getline(fs,line)){
-    linestream.str(line);
-    linestream>>index;
-    linestream>>diex;
-    linestream>>diey;
-    linestream>>diez;
-    linestream.clear();
-    die_x.insert(std::pair<int,double>(index,diex));
-    die_y.insert(std::pair<int,double>(index,diey));
-    die_z.insert(std::pair<int,double>(index,diez));
-    }
-    fs.close();
-    std::system(("rm local_die"+std::to_string(i)+".txt").c_str());
-    }
-    fs.open("all_local_die.txt",std::fstream::out);
-    std::map<int, double>::iterator b=die_y.begin();
-    std::map<int, double>::iterator c=die_z.begin();
-    for(std::map<int,double>::iterator a=die_x.begin();a!=die_x.end();a++){
-      fs<<a->first<<" "<<a->second<<" "<<b->second<<" "<<c->second<<std::endl;
-      b++;
-      c++;
-    }
-  }
-  else{
-  //doing nothing.
-  }
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
 	return 0;

@@ -150,6 +150,12 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
   int i=0;
+  MPI_File fh;
+  MPI_File_open(MPI_COMM_WORLD,"local_polar.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND,MPI_INFO_NULL,&fh);
+  MPI_Offset initial_offset;
+  MPI_Offset offset;
+  MPI_File_get_position(fh,&initial_offset);
+  MPI_Status status;
 	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
     i=layer*world_size+world_rank;
     if(i<cell*cell*cell){
@@ -180,11 +186,15 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 		py.push_back(sum[1]/volume*16);//16 is aim at converting the units from e to C
 		pz.push_back(sum[2]/volume*16);//16 is aim at converting the units from e to C
 		delete [] neighbor;
-    polarconfig::px_local[layer].push_back(sum[0]/volume*16);
-    polarconfig::py_local[layer].push_back(sum[1]/volume*16);
-    polarconfig::pz_local[layer].push_back(sum[2]/volume*16);
+    for(size_t m=0;m<3;m++){
+      sum[m]=sum[m]/volume*16;
     }
+    offset=3*sizeof(double)*i;
+    MPI_File_write_at_all(fh,initial_offset+offset,sum,3,MPI_DOUBLE,&status);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
 	}
+  MPI_File_close(&fh);
   sum[0]=sum_together(px);
   sum[1]=sum_together(py);
   sum[2]=sum_together(pz);
@@ -580,28 +590,6 @@ double dielectric(double polarvar,double volume,double temp){
 	/*1e-30 is to convert the unit of A^3 to m^3
 	 *1.38*1e-23 is kb boltzmann constant.
 	 * */
-}
-void calculate_local_die(){
-   double lx,ly,lz;
-   lx=average(polarconfig::la_x);
-   ly=average(polarconfig::la_y);
-   lz=average(polarconfig::la_z);
-   double volume=lx*ly*lz;
-   int world_rank;
-   int world_size;
-   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
-   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
-   int cell=polarconfig::cell;
-   int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
-   MPI_Bcast(&volume,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-   MPI_Barrier(MPI_COMM_WORLD);
-   MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-   MPI_Barrier(MPI_COMM_WORLD);
-   for(size_t i=0;i<MPI_LOOP_COUNT;i++){
-   polarconfig::epsilon_x[i]=dielectric(variance(polarconfig::px_local[i]),volume,polarconfig::temperature);
-   polarconfig::epsilon_y[i]=dielectric(variance(polarconfig::py_local[i]),volume,polarconfig::temperature);
-   polarconfig::epsilon_z[i]=dielectric(variance(polarconfig::pz_local[i]),volume,polarconfig::temperature);
-    }
 }
 void outpolar(){
     std::fstream fileout;
