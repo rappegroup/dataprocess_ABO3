@@ -223,6 +223,7 @@ int main(){
 	dump.close();
 	calist.close();
   MPI_Barrier(MPI_COMM_WORLD);
+  calculate_local_die(cell,average(polarconfig::la_x)*average(polarconfig::la_y)*average(polarconfig::la_z),polarconfig::temperature);
   MPI_Finalize();
 	return 0;
 }
