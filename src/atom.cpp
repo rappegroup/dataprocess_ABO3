@@ -715,4 +715,66 @@ void outpolar(){
 	fileout.close();
     fileout.close();
 }
-
+void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int cell,size_t signal){
+  /*store the first position position on the disk and doing nothing*/
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+  MPI_Status status;
+  MPI_File fh,fhA,fhB,fhAinitial,fhBinitial;
+  MPI_Offset initial_offset,offset,initial_offsetA,initial_offsetB;
+  double initial_position_A[3]={0.0,0.0,0.0};
+  double initial_position_B[3]={0.0,0.0,0.0};
+  double bias_position[3]={0.0,0.0,0.0};
+  int i;
+  if(signal==1){
+    MPI_File_open(MPI_COMM_WORLD,"starting_position.A.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fh);
+    for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+      i=layer*world_size+world_rank;
+      if(i<cell*cell*cell){
+      initial_offset=i*3*sizeof(double);
+      MPI_File_write_at_all(fh,initial_offset,(A+i)->position,3,MPI_DOUBLE,&status);
+      }
+    }
+    MPI_File_close(&fh);
+    MPI_File_open(MPI_COMM_WORLD,"starting_position.B.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fh);
+    for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+      i=layer*world_size+world_rank;
+      if(i<cell*cell*cell){
+      initial_offset=i*3*sizeof(double);
+      MPI_File_write_at_all(fh,initial_offset,(B+i)->position,3,MPI_DOUBLE,&status);
+      }
+    }
+    MPI_File_close(&fh);
+  }
+  else{
+    MPI_File_open(MPI_COMM_WORLD,"starting_position.A.bin",MPI_MODE_RDONLY,MPI_INFO_NULL,&fhAinitial);
+    MPI_File_open(MPI_COMM_WORLD,"starting_position.B.bin",MPI_MODE_RDONLY,MPI_INFO_NULL,&fhBinitial);
+    MPI_File_open(MPI_COMM_WORLD,"position_A.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND,MPI_INFO_NULL,&fhA);
+    MPI_File_open(MPI_COMM_WORLD,"position_B.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND,MPI_INFO_NULL,&fhB);
+    MPI_File_get_position(fhA,&initial_offsetA);
+    MPI_File_get_position(fhB,&initial_offsetB);
+    for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
+      offset=i*3*sizeof(double);
+      MPI_File_read_at(fhAinitial,initial_offset,initial_position_A,3,MPI_DOUBLE,&status);
+      MPI_File_read_at(fhBinitial,initial_offset,initial_position_B,3,MPI_DOUBLE,&status);
+      for(size_t j=0;j<3;j++){
+        bias_position[j]=(A+i)->position[j]-initial_position_A[j];
+      }
+      MPI_File_write_at_all(fhA,initial_offsetA+offset,bias_position,3,MPI_DOUBLE,&status);
+      for(size_t j=0;j<3;j++){
+        bias_position[j]=(B+i)->position[j]-initial_position_B[j];
+      }
+      MPI_File_write_at_all(fhB,initial_offsetB+offset,bias_position,3,MPI_DOUBLE,&status);
+    }
+    }
+  }
+  MPI_File_close(&fhAinitial);
+  MPI_File_close(&fhBinitial);
+  MPI_File_close(&fhA);
+  MPI_File_close(&fhB);
+}

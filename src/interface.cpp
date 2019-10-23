@@ -14,7 +14,7 @@ std::vector<std::string> split(std::string s, std::string delimiter) {
 			res.push_back(s.substr(pos_start));
 		  return res;
 }
-void info(int& cell,std::string& dumpfile,std::string& calistfile,int& velocity_on,int& polarization_on,double& temperature){
+void info(int& cell,std::string& dumpfile,std::string& calistfile,int& velocity_on,int& polarization_on,double& temperature,int& position_variance_on,int& local_die){
 	std::string temp;
 	getline(std::cin,temp);//rm the first line, this is the tile and useless.
 	std::vector<std::string> input;
@@ -60,6 +60,18 @@ void info(int& cell,std::string& dumpfile,std::string& calistfile,int& velocity_
 			stre>>temperature;
 			stre.clear();
 		}
+    else if(input[0].find("posit_variance")!=std::string::npos){
+      flag=flag.substr(0,flag.find(","));
+      stre.str(flag);
+      stre>>position_variance_on;
+      stre.clear();
+    }
+    else if(input[0].find("local_die")!=std::string::npos){
+      flag=flag.substr(0,flag.find(","));
+      stre.str(flag);
+      stre>>local_die;
+      stre.clear();
+    }
 	getline(std::cin,temp);
 	}
 }

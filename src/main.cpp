@@ -25,13 +25,15 @@ int main(){
   std::string dumpfile;
   int velocity_on=1;
   int polarization_on=1;
+  int position_variance_on=1;
+  int local_die=0;
   std::string calistfile;
   int world_rank;
   int world_size;
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   std::list<double*> ve_list;
   if(world_rank==0){
-    info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature);
+    info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature,position_variance_on,local_die);
 	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
 	}
   MPI_Bcast(&cell,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
@@ -203,6 +205,9 @@ int main(){
 			if(polarization_on){
 				analyzepolar(A,B,oxygen,period,cell);
 			}
+      if(position_variance_on){
+        analyzeposition_variance(A,B,oxygen,period,cell,signal);
+      }
       getnewframe=0;
       }
       else{
@@ -223,7 +228,9 @@ int main(){
 	dump.close();
 	calist.close();
   MPI_Barrier(MPI_COMM_WORLD);
+  if(local_die){
   calculate_local_die(cell,average(polarconfig::la_x)*average(polarconfig::la_y)*average(polarconfig::la_z),polarconfig::temperature);
+  }
   MPI_Finalize();
 	return 0;
 }

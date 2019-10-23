@@ -5,5 +5,6 @@ temp=100,
 solution_list=cadata.txt, 
 auto_velocity=0, 
 polarization=0, 
+local_die=1,
 posit_variance=1,
 /

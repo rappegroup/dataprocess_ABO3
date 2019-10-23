@@ -33,6 +33,7 @@ int* neighbor_o_forB(int index,int cell);
 int* neighbor_A_forB(int index,int cell);
 double tiltangle(atom* a, atom* b,atom* c,double* p);
 void analyzepolar(atom* A,atom* B,atom* oxygen, double* period, int cell);
+void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int cell,size_t signal);
 void outpolar();
 void calculate_local_die(int cell,double local_volume,double temperature);
 double dielectric(double polarvar,double volume,double temp);
