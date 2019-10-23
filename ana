@@ -4,5 +4,6 @@ cell=30,
 temp=100,
 solution_list=cadata.txt, 
 auto_velocity=0, 
-polarization=1, 
+polarization=0, 
+posit_variance=1,
 /
