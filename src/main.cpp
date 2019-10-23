@@ -36,10 +36,13 @@ int main(){
     info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature,position_variance_on,local_die);
 	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
 	}
+  std::cout<<"I am here fine:"<<std::endl;
   MPI_Bcast(&cell,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&velocity_on,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarization_on,1,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Bcast(&position_variance_on,1,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Bcast(&local_die,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
   double* ve_temp;
