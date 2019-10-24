@@ -772,9 +772,10 @@ void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int ce
       MPI_File_write_at_all(fhB,initial_offsetB+offset,bias_position,3,MPI_DOUBLE,&status);
     }
     }
-  }
   MPI_File_close(&fhAinitial);
   MPI_File_close(&fhBinitial);
   MPI_File_close(&fhA);
   MPI_File_close(&fhB);
-}
+
+  }
+ }

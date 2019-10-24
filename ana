@@ -1,6 +1,6 @@
 &ana.x
 filename=dump.xyz, 
-cell=30,
+cell=20,
 temp=100,
 solution_list=cadata.txt, 
 auto_velocity=0, 

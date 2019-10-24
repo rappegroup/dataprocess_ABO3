@@ -222,7 +222,7 @@ int main(){
   MPI_Barrier(MPI_COMM_WORLD);
 	if(polarization_on){
         if(world_rank==0){
-		outpolar();
+	     	outpolar();
     	}
 	}
 	if(velocity_on){
