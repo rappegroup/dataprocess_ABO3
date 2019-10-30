@@ -37,4 +37,5 @@ void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int ce
 void outpolar();
 void calculate_local_die(int cell,double local_volume,double temperature);
 double dielectric(double polarvar,double volume,double temp);
+void calculate_local_variance(int cell,double temperature);
 #endif

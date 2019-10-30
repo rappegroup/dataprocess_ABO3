@@ -234,6 +234,9 @@ int main(){
   if(local_die){
   calculate_local_die(cell,average(polarconfig::la_x)*average(polarconfig::la_y)*average(polarconfig::la_z),polarconfig::temperature);
   }
+  if(position_variance_on){
+  calculate_local_variance(cell,polarconfig::temperature);
+  }
   MPI_Finalize();
 	return 0;
 }

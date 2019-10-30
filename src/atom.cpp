@@ -779,3 +779,113 @@ void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int ce
 
   }
  }
+void calculate_local_variance(int cell,double temperature){
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+  MPI_Status status;
+  MPI_File fh,fdieout;
+  MPI_Offset offset;
+  MPI_File_open(MPI_COMM_WORLD,"position_A.bin", MPI_MODE_RDONLY,MPI_INFO_NULL,&fh);
+  MPI_File_open(MPI_COMM_WORLD,"local_variance_A.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fdieout);
+  MPI_File_get_size(fh,&offset);
+  int simulation_time=offset/sizeof(double)/3/(cell*cell*cell);
+  double* px=new double [simulation_time];
+  double* py=new double [simulation_time];
+  double* pz=new double [simulation_time];
+  double avepx,avepy,avepz;
+  double* epx=new double [MPI_LOOP_COUNT];
+  double* epy=new double [MPI_LOOP_COUNT];
+  double* epz=new double [MPI_LOOP_COUNT];
+  double diex;
+  double diey;
+  double diez;
+  int i;
+  for(size_t layer=0;layer< MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
+    avepx=0.0;
+    avepy=0.0;
+    avepz=0.0;
+    for(size_t k=0;k<simulation_time;k++){
+      offset=(3*(k*cell*cell*cell+i))*sizeof(double);
+      MPI_File_read_at(fh,offset,&px[k],1,MPI_DOUBLE,&status);
+      offset=offset+sizeof(double);
+      MPI_File_read_at(fh,offset,&py[k],1,MPI_DOUBLE,&status);
+      offset=offset+sizeof(double);
+      MPI_File_read_at(fh,offset,&pz[k],1,MPI_DOUBLE,&status);
+      avepx=avepx+px[k];
+      avepy=avepy+py[k];
+      avepz=avepz+pz[k];
+    }
+    avepx=avepx/simulation_time;
+    avepy=avepy/simulation_time;
+    avepz=avepz/simulation_time;
+    diex=0.0;
+    diey=0.0;
+    diez=0.0;
+    for(size_t k=0;k<simulation_time;k++){
+      diex=(px[k]-avepx)*(px[k]-avepx)+diex;
+      diey=(py[k]-avepy)*(py[k]-avepy)+diey;
+      diez=(pz[k]-avepz)*(pz[k]-avepz)+diez;
+    }
+    diex=diex/simulation_time/temperature;
+    diey=diey/simulation_time/temperature;
+    diez=diez/simulation_time/temperature;
+    offset=i*3*sizeof(double);
+    MPI_File_write_at_all(fdieout,offset,&diex,1,MPI_DOUBLE,&status);
+    offset=offset+sizeof(double);
+    MPI_File_write_at_all(fdieout,offset,&diey,1,MPI_DOUBLE,&status);
+    offset=offset+sizeof(double);
+    MPI_File_write_at_all(fdieout,offset,&diez,1,MPI_DOUBLE,&status);
+    }
+  }
+  MPI_File_close(&fdieout);
+  MPI_File_close(&fh);
+  MPI_File_open(MPI_COMM_WORLD,"position_B.bin", MPI_MODE_RDONLY,MPI_INFO_NULL,&fh);
+  MPI_File_open(MPI_COMM_WORLD,"local_variance_B.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fdieout);
+  MPI_File_get_size(fh,&offset);
+  for(size_t layer=0;layer< MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<cell*cell*cell){
+    avepx=0.0;
+    avepy=0.0;
+    avepz=0.0;
+    for(size_t k=0;k<simulation_time;k++){
+      offset=(3*(k*cell*cell*cell+i))*sizeof(double);
+      MPI_File_read_at(fh,offset,&px[k],1,MPI_DOUBLE,&status);
+      offset=offset+sizeof(double);
+      MPI_File_read_at(fh,offset,&py[k],1,MPI_DOUBLE,&status);
+      offset=offset+sizeof(double);
+      MPI_File_read_at(fh,offset,&pz[k],1,MPI_DOUBLE,&status);
+      avepx=avepx+px[k];
+      avepy=avepy+py[k];
+      avepz=avepz+pz[k];
+    }
+    avepx=avepx/simulation_time;
+    avepy=avepy/simulation_time;
+    avepz=avepz/simulation_time;
+    diex=0.0;
+    diey=0.0;
+    diez=0.0;
+    for(size_t k=0;k<simulation_time;k++){
+      diex=(px[k]-avepx)*(px[k]-avepx)+diex;
+      diey=(py[k]-avepy)*(py[k]-avepy)+diey;
+      diez=(pz[k]-avepz)*(pz[k]-avepz)+diez;
+    }
+    diex=diex/simulation_time/temperature;
+    diey=diey/simulation_time/temperature;
+    diez=diez/simulation_time/temperature;
+    offset=i*3*sizeof(double);
+    MPI_File_write_at_all(fdieout,offset,&diex,1,MPI_DOUBLE,&status);
+    offset=offset+sizeof(double);
+    MPI_File_write_at_all(fdieout,offset,&diey,1,MPI_DOUBLE,&status);
+    offset=offset+sizeof(double);
+    MPI_File_write_at_all(fdieout,offset,&diez,1,MPI_DOUBLE,&status);
+    }
+  }
+  MPI_File_close(&fdieout);
+  MPI_File_close(&fh);
+}
