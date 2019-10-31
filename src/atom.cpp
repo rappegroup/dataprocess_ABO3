@@ -727,7 +727,7 @@ void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int ce
   MPI_Offset initial_offset,offset,initial_offsetA,initial_offsetB;
   double initial_position_A[3]={0.0,0.0,0.0};
   double initial_position_B[3]={0.0,0.0,0.0};
-  double bias_position[3]={0.0,0.0,0.0};
+  double* bias_position;
   int i;
   if(signal==1){
     MPI_File_open(MPI_COMM_WORLD,"starting_position.A.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fh);
@@ -762,13 +762,11 @@ void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int ce
       offset=i*3*sizeof(double);
       MPI_File_read_at(fhAinitial,initial_offset,initial_position_A,3,MPI_DOUBLE,&status);
       MPI_File_read_at(fhBinitial,initial_offset,initial_position_B,3,MPI_DOUBLE,&status);
-      for(size_t j=0;j<3;j++){
-        bias_position[j]=(A+i)->position[j]-initial_position_A[j];
-      }
+        bias_position=distance(initial_position_A,(A+i)->position,period);
+      delete [] bias_position;
       MPI_File_write_at_all(fhA,initial_offsetA+offset,bias_position,3,MPI_DOUBLE,&status);
-      for(size_t j=0;j<3;j++){
-        bias_position[j]=(B+i)->position[j]-initial_position_B[j];
-      }
+        bias_position=distance(initial_position_B[j],(B+i)->position[j],period);
+      delete [] bias_position;
       MPI_File_write_at_all(fhB,initial_offsetB+offset,bias_position,3,MPI_DOUBLE,&status);
     }
     }
