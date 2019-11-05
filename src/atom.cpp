@@ -20,6 +20,16 @@ double* distance(atom* a,atom* b,double* p){
 	}
 	return dist;
 }
+double* distance(double* a,double* b,double* p){
+	double* dist=new double[3];
+	double temp;
+	for(size_t i=0;i<3;i++){
+		temp=b[i]-a[i];
+		temp=(temp/p[i]-round(temp/p[i]))*p[i];
+		dist[i]=temp;
+	}
+	return dist;
+}
 /*no periodical boudary condition*/
 double* distance(double* a,double* b){
     double* dist=new double[3];
@@ -765,7 +775,7 @@ void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int ce
         bias_position=distance(initial_position_A,(A+i)->position,period);
       delete [] bias_position;
       MPI_File_write_at_all(fhA,initial_offsetA+offset,bias_position,3,MPI_DOUBLE,&status);
-        bias_position=distance(initial_position_B[j],(B+i)->position[j],period);
+        bias_position=distance(initial_position_B,(B+i)->position,period);
       delete [] bias_position;
       MPI_File_write_at_all(fhB,initial_offsetB+offset,bias_position,3,MPI_DOUBLE,&status);
     }
