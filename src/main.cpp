@@ -232,7 +232,12 @@ int main(){
 	calist.close();
   MPI_Barrier(MPI_COMM_WORLD);
   if(local_die){
-  calculate_local_die(cell,average(polarconfig::la_x)*average(polarconfig::la_y)*average(polarconfig::la_z),polarconfig::temperature);
+  double lx=average(polarconfig::la_x);
+  double ly=average(polarconfig::la_y);
+  double lz=average(polarconfig::la_z);
+  double volume=lx*ly*lz;
+  MPI_Bcast(&volume,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  calculate_local_die(cell,volume,polarconfig::temperature);
   }
   if(position_variance_on){
   calculate_local_variance(cell,polarconfig::temperature);
