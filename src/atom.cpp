@@ -770,14 +770,14 @@ void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int ce
     i=layer*world_size+world_rank;
     if(i<cell*cell*cell){
       offset=i*3*sizeof(double);
-      MPI_File_read_at(fhAinitial,initial_offset,initial_position_A,3,MPI_DOUBLE,&status);
-      MPI_File_read_at(fhBinitial,initial_offset,initial_position_B,3,MPI_DOUBLE,&status);
+      MPI_File_read_at(fhAinitial,offset,initial_position_A,3,MPI_DOUBLE,&status);
+      MPI_File_read_at(fhBinitial,offset,initial_position_B,3,MPI_DOUBLE,&status);
         bias_position=distance(initial_position_A,(A+i)->position,period);
-      delete [] bias_position;
       MPI_File_write_at_all(fhA,initial_offsetA+offset,bias_position,3,MPI_DOUBLE,&status);
-        bias_position=distance(initial_position_B,(B+i)->position,period);
       delete [] bias_position;
+        bias_position=distance(initial_position_B,(B+i)->position,period);
       MPI_File_write_at_all(fhB,initial_offsetB+offset,bias_position,3,MPI_DOUBLE,&status);
+      delete [] bias_position;
     }
     }
   MPI_File_close(&fhAinitial);
