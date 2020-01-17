@@ -12,7 +12,7 @@ int main(){
   std::stringstream linestream;
   double px_temp,py_temp,pz_temp;
   std::list<double> px_list,py_list,pz_list;
-  int simulation_time_steps=0
+  int simulation_time_steps=0;
   while(getline(fs,templine)){
     linestream.clear();
     linestream.str(templine);
@@ -26,7 +26,7 @@ int main(){
   }
   int equilibrium_time_steps=1000000;
   int dump_inteval=200;
-  int simulation_time_steps=simulation_time_steps*dump_inteval;
+  simulation_time_steps=simulation_time_steps*dump_inteval;
   int useful=(simulation_time_steps-equilibrium_time_steps)/dump_inteval;
   double* px_vector=new double[useful];
   double* py_vector=new double[useful];
@@ -47,12 +47,32 @@ int main(){
   fftw_complex* out;
   fftw_plan p;
   out=(fftw_complex* )fftw_malloc(sizeof(fftw_complex)*(useful/2+1));
-  p=fftw_plan_dft_r2c_1d(len,in,out,FFTW_ESTIMATE);
+  p=fftw_plan_dft_r2c_1d(useful,px_vector,out,FFTW_ESTIMATE);
   fftw_execute(p);
   std::fstream fs_px_frequency;
+  fs_px_frequency.open("px_frequency.txt",std::fstream::out);
   for(size_t i=0;i<useful/2+1;i++){
-    fs_px_frequency<<out[i][0]<<" "<<out[i][1]<<std::endl;
+    fs_px_frequency<<out[i][0]/useful<<" "<<out[i][1]/useful<<std::endl;
   }
   fs_px_frequency.close();
-  fftw_destroy(p);
+  fftw_destroy_plan(p);
+  p=fftw_plan_dft_r2c_1d(useful,py_vector,out,FFTW_ESTIMATE);
+  fftw_execute(p);
+  std::fstream fs_py_frequency;
+  fs_py_frequency.open("py_frequency.txt",std::fstream::out);
+  for(size_t i=0;i<useful/2+1;i++){
+    fs_py_frequency<<out[i][0]/useful<<" "<<out[i][1]/useful<<std::endl;
+  }
+  fs_py_frequency.close();
+  fftw_destroy_plan(p);
+  p=fftw_plan_dft_r2c_1d(useful,pz_vector,out,FFTW_ESTIMATE);
+  fftw_execute(p);
+  std::fstream fs_pz_frequency;
+  fs_pz_frequency;
+  fs_pz_frequency.open("pz_frequency.txt",std::fstream::out);
+  for(size_t i=0;i<useful/2+1;i++){
+    fs_pz_frequency<<out[i][0]/useful<<" "<<out[i][1]/useful<<std::endl;
+  }
+  fs_pz_frequency.close();
+  fftw_destroy_plan(p);
 }
