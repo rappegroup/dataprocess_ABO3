@@ -26,6 +26,13 @@ double* polarcorrelation(double* pseries,int length){
   }
   return correlation;
 }
+double averagelist(std::list<double> plist){
+  double sum=0.0;
+  for(std::list<double>::iterator a=plist.begin();a!=plist.end();a++){
+    sum=sum+*a;
+  }
+  return sum/plist.size();
+}
 int main(){
   std::fstream fs;
   fs.open("polar.txt",std::fstream::in);
