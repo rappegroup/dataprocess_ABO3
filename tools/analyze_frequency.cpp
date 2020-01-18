@@ -7,14 +7,14 @@
 #include <fftw3.h>
 #include <complex>
 #define PI 3.141592653
-std::complex<double> dielectric(std::complex<double> polarvar,double volume,double temp,double frequency){
+std::complex<double> dielectric_second(std::complex<double> polarvar,double volume,double temp,double frequency){
   return 1e-30/(1.38*1e-23*8.85*1e-12)*polarvar*volume/temp*sqrt(std::complex<double>(-1,0))*2.0*PI*frequency;
     /*1e-30 is to convert the unit of A^3 to m^3
      *   *1.38*1e-23 is kb boltzmann constant.
      *     * */
 }
-std::complex<double> dielectric_first(double polarvar,double volume,double temp){
-   return 1e-30/(1.38*1e-23*8.85*1e-12)*polarvar*volume/temp*sqrt(std::complex<double>(-1,0));
+double dielectric_first(double polarvar,double volume,double temp){
+   return 1e-30/(1.38*1e-23*8.85*1e-12)*polarvar*volume/temp;
     /*1e-30 is to convert the unit of A^3 to m^3
      *   *1.38*1e-23 is kb boltzmann constant.
      *     * */
@@ -91,9 +91,11 @@ int main(){
   fftw_execute(p);
   std::fstream fs_px_frequency;
   fs_px_frequency.open("px_frequency.txt",std::fstream::out);
+  double first_term=dielectric_first(out[0][0],volume,temperature);
+  std::cout<<first_term<<std::endl;
   for(size_t i=0;i<useful/2+1;i++){
     fs_px_frequency<<out[i][0]<<" "<<out[i][1]<<std::endl;
-    std::cout<<dielectric(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful)<<std::endl;
+    std::cout<<dielectric_second(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful)<<std::endl;
   }
   fs_px_frequency.close();
 }
