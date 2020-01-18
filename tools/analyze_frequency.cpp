@@ -32,6 +32,27 @@ double* polarcorrelation(double* pseries,int length){
   }
   return correlation;
 }
+double* polarcorrelation_zero_padding(double* pseries,int length){
+  int outlength=length;
+  double* correlation=new double[outlength];
+  double sum=0.0;
+  for(size_t i=0;i<length;i++){
+    sum=0.0;
+    for(size_t k=0;k+i<length;k++){
+    sum=sum+pseries[k]*pseries[k+i];
+    }
+    correlation[i]=sum/(length);
+  }
+  return correlation;
+}
+
+double polarvar(double* pseries,int length){
+  double sum=0.0;
+  for(size_t i=0;i<length;i++){
+    sum=sum+pseries[i]*pseries[i];
+  }
+  return sum/length;
+}
 double averagelist(std::list<double>& plist){
   double sum=0.0;
   for(std::list<double>::iterator a=plist.begin();a!=plist.end();a++){
@@ -83,7 +104,7 @@ int main(){
     py_list.pop_front();
     pz_list.pop_front();
   }
-  double* px_auto_corre=polarcorrelation(px_vector,useful);
+  double* px_auto_corre=polarcorrelation_zero_padding(px_vector,useful);
   fftw_complex* out;
   fftw_plan p;
   out=(fftw_complex* )fftw_malloc(sizeof(fftw_complex)*((useful-1)/2+1));
@@ -91,11 +112,11 @@ int main(){
   fftw_execute(p);
   std::fstream fs_px_frequency;
   fs_px_frequency.open("px_frequency.txt",std::fstream::out);
-  double first_term=dielectric_first(out[0][0],volume,temperature);
+  double first_term=dielectric_first(polarvar(px_vector,useful),volume,temperature);
   std::cout<<first_term<<std::endl;
   for(size_t i=0;i<useful/2+1;i++){
     fs_px_frequency<<out[i][0]<<" "<<out[i][1]<<std::endl;
-    std::cout<<dielectric_second(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful)<<std::endl;
+    std::cout<<std::complex<double>(first_term,0.0)+dielectric_second(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful)<<std::endl;
   }
   fs_px_frequency.close();
 }
