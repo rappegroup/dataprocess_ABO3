@@ -8,7 +8,13 @@
 #include <complex>
 #define PI 3.141592653
 std::complex<double> dielectric(std::complex<double> polarvar,double volume,double temp,double frequency){
-  return 1e-30/(1.38*1e-23*8.85*1e-12)*polarvar*volume/temp*sqrt(-1)*2.0*PI*frequency;
+  return 1e-30/(1.38*1e-23*8.85*1e-12)*polarvar*volume/temp*sqrt(std::complex<double>(-1,0))*2.0*PI*frequency;
+    /*1e-30 is to convert the unit of A^3 to m^3
+     *   *1.38*1e-23 is kb boltzmann constant.
+     *     * */
+}
+std::complex<double> dielectric_first(double polarvar,double volume,double temp){
+   return 1e-30/(1.38*1e-23*8.85*1e-12)*polarvar*volume/temp*sqrt(std::complex<double>(-1,0));
     /*1e-30 is to convert the unit of A^3 to m^3
      *   *1.38*1e-23 is kb boltzmann constant.
      *     * */
@@ -77,16 +83,17 @@ int main(){
     py_list.pop_front();
     pz_list.pop_front();
   }
+  double* px_auto_corre=polarcorrelation(px_vector,useful);
   fftw_complex* out;
   fftw_plan p;
-  out=(fftw_complex* )fftw_malloc(sizeof(fftw_complex)*(useful/2+1));
-  p=fftw_plan_dft_r2c_1d(useful,px_vector,out,FFTW_ESTIMATE);
+  out=(fftw_complex* )fftw_malloc(sizeof(fftw_complex)*((useful-1)/2+1));
+  p=fftw_plan_dft_r2c_1d((useful-1),px_auto_corre,out,FFTW_ESTIMATE);
   fftw_execute(p);
   std::fstream fs_px_frequency;
   fs_px_frequency.open("px_frequency.txt",std::fstream::out);
   for(size_t i=0;i<useful/2+1;i++){
     fs_px_frequency<<out[i][0]<<" "<<out[i][1]<<std::endl;
-    std::cout<<dielectric(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful);
+    std::cout<<dielectric(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful)<<std::endl;
   }
   fs_px_frequency.close();
 }
