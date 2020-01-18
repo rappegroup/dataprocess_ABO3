@@ -26,7 +26,7 @@ double* polarcorrelation(double* pseries,int length){
   }
   return correlation;
 }
-double averagelist(std::list<double> plist){
+double averagelist(std::list<double>& plist){
   double sum=0.0;
   for(std::list<double>::iterator a=plist.begin();a!=plist.end();a++){
     sum=sum+*a;
@@ -66,10 +66,13 @@ int main(){
     py_list.pop_front();
     pz_list.pop_front();
   }
+  px_temp=averagelist(px_list);
+  py_temp=averagelist(py_list);
+  pz_temp=averagelist(pz_list);
   for(size_t i=0;i<useful;i++){
-    px_vector[i]=px_list.front();
-    py_vector[i]=py_list.front();
-    pz_vector[i]=pz_list.front();
+    px_vector[i]=px_list.front()-px_temp;
+    py_vector[i]=py_list.front()-py_temp;
+    pz_vector[i]=pz_list.front()-pz_temp;
     px_list.pop_front();
     py_list.pop_front();
     pz_list.pop_front();
