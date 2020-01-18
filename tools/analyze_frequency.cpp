@@ -5,6 +5,27 @@
 #include <fstream>
 #include <new>
 #include <fftw3.h>
+#include <complex>
+#define PI 3.141592653
+std::complex<double> dielectric(std::complex<double> polarvar,double volume,double temp,double frequency){
+  return 1e-30/(1.38*1e-23*8.85*1e-12)*polarvar*volume/temp*sqrt(-1)*2.0*PI*frequency;
+    /*1e-30 is to convert the unit of A^3 to m^3
+     *   *1.38*1e-23 is kb boltzmann constant.
+     *     * */
+}
+double* polarcorrelation(double* pseries,int length){
+  int outlength=length-1;
+  double* correlation=new double[outlength];
+  double sum=0.0;
+  for(size_t i=0;i<outlength;i++){
+    sum=0.0;
+    for(size_t k=0;k+i<length;k++){
+    sum=sum+pseries[k]*pseries[k+i];
+    }
+    correlation[i]=sum/(length-i);
+  }
+  return correlation;
+}
 int main(){
   std::fstream fs;
   fs.open("polar.txt",std::fstream::in);
@@ -31,6 +52,8 @@ int main(){
   double* px_vector=new double[useful];
   double* py_vector=new double[useful];
   double* pz_vector=new double[useful];
+  double volume=(20*4.04)*(20*4.04)*(20*4.04);
+  double temperature=100.0;
   for(size_t i=0;i<equilibrium_time_steps/dump_inteval;i++){
     px_list.pop_front();
     py_list.pop_front();
@@ -52,27 +75,8 @@ int main(){
   std::fstream fs_px_frequency;
   fs_px_frequency.open("px_frequency.txt",std::fstream::out);
   for(size_t i=0;i<useful/2+1;i++){
-    fs_px_frequency<<out[i][0]/useful<<" "<<out[i][1]/useful<<std::endl;
+    fs_px_frequency<<out[i][0]<<" "<<out[i][1]<<std::endl;
+    std::cout<<dielectric(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful);
   }
   fs_px_frequency.close();
-  fftw_destroy_plan(p);
-  p=fftw_plan_dft_r2c_1d(useful,py_vector,out,FFTW_ESTIMATE);
-  fftw_execute(p);
-  std::fstream fs_py_frequency;
-  fs_py_frequency.open("py_frequency.txt",std::fstream::out);
-  for(size_t i=0;i<useful/2+1;i++){
-    fs_py_frequency<<out[i][0]/useful<<" "<<out[i][1]/useful<<std::endl;
-  }
-  fs_py_frequency.close();
-  fftw_destroy_plan(p);
-  p=fftw_plan_dft_r2c_1d(useful,pz_vector,out,FFTW_ESTIMATE);
-  fftw_execute(p);
-  std::fstream fs_pz_frequency;
-  fs_pz_frequency;
-  fs_pz_frequency.open("pz_frequency.txt",std::fstream::out);
-  for(size_t i=0;i<useful/2+1;i++){
-    fs_pz_frequency<<out[i][0]/useful<<" "<<out[i][1]/useful<<std::endl;
-  }
-  fs_pz_frequency.close();
-  fftw_destroy_plan(p);
 }
