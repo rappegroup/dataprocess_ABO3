@@ -105,6 +105,8 @@ int main(){
     pz_list.pop_front();
   }
   double* px_auto_corre=polarcorrelation_zero_padding(px_vector,useful);
+  double* py_auto_corre=polarcorrelation_zero_padding(py_vector,useful);
+  double* pz_auto_corre=polarcorrelation_zero_padding(pz_vector,useful);
   fftw_complex* out;
   fftw_plan p;
   out=(fftw_complex* )fftw_malloc(sizeof(fftw_complex)*((useful-1)/2+1));
@@ -113,10 +115,32 @@ int main(){
   std::fstream fs_px_frequency;
   fs_px_frequency.open("px_frequency.txt",std::fstream::out);
   double first_term=dielectric_first(polarvar(px_vector,useful),volume,temperature);
-  std::cout<<first_term<<std::endl;
-  for(size_t i=0;i<useful/2+1;i++){
-    fs_px_frequency<<out[i][0]<<" "<<out[i][1]<<std::endl;
-    std::cout<<std::complex<double>(first_term,0.0)+dielectric_second(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful)<<std::endl;
+  std::cout<<"the base frequency is: "<<1.0/(simulation_time_steps)*1e6<<"GHz"<<" Increasing Range 0-"<<useful<<std::endl;
+  for(size_t i=0;i<useful/2;i++){
+    fs_px_frequency<<out[i][0]<<" "<<out[i][1]<<" "<<std::complex<double>(first_term,0.0)+dielectric_second(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful)<<std::endl;
   }
+  fftw_destroy_plan(p);
   fs_px_frequency.close();
+  std::fstream fs_py_frequency;
+  fs_py_frequency.open("py_frequency.txt",std::fstream::out);
+  first_term=dielectric_first(polarvar(py_vector,useful),volume,temperature);
+  p=fftw_plan_dft_r2c_1d((useful-1),py_auto_corre,out,FFTW_ESTIMATE);
+  fftw_execute(p);
+  std::cout<<"the base frequency is: "<<1.0/(simulation_time_steps)*1e6<<"GHz"<<" Increasing Range 0-"<<useful<<std::endl;
+  for(size_t i=0;i<useful/2;i++){
+    fs_py_frequency<<out[i][0]<<" "<<out[i][1]<<" "<<std::complex<double>(first_term,0.0)+dielectric_second(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful)<<std::endl;
+  }
+  fftw_destroy_plan(p);
+  fs_py_frequency.close();
+  std::fstream fs_pz_frequency;
+  fs_pz_frequency.open("pz_frequency.txt",std::fstream::out);
+  first_term=dielectric_first(polarvar(pz_vector,useful),volume,temperature);
+  p=fftw_plan_dft_r2c_1d((useful-1),pz_auto_corre,out,FFTW_ESTIMATE);
+  fftw_execute(p);
+  std::cout<<"the base frequency is: "<<1.0/(simulation_time_steps)*1e6<<"GHz"<<" Increasing Range 0-"<<useful<<std::endl;
+  for(size_t i=0;i<useful/2;i++){
+    fs_pz_frequency<<out[i][0]<<" "<<out[i][1]<<" "<<std::complex<double>(first_term,0.0)+dielectric_second(std::complex<double>(out[i][0],out[i][1]),volume,temperature,(i+0.0)/useful)<<std::endl;
+  }
+  fftw_destroy_plan(p);
+  fs_pz_frequency.close();
 }
