@@ -59,7 +59,6 @@ int main(){
       py.push_back(localpolar[1]);
       pz.push_back(localpolar[2]);
     }
-    std::cout<<average(px)<<" "<<average(py)<<" "<<average(pz)<<std::endl;
     polaraverage[loop*3+0]=average(px);
     polaraverage[loop*3+1]=average(py);
     polaraverage[loop*3+2]=average(pz);
@@ -73,6 +72,10 @@ int main(){
   nx=0;
   size_t record_start;
   double decay_rate=0.7;
+  for(size_t i=0;i<cell;i++){
+    domainsizecount[i]=0;
+    domainsizecount_reduce[i]=0;
+  }
   for(size_t i=world_rank;i<cell*cell;i=i+world_size){
     ny=i%cell;
     nz=(i-ny)/cell;
@@ -102,6 +105,74 @@ int main(){
         }
         else{
           px.push_back(reducepolar[0+nindex*3]);
+        }
+      }
+    }
+  }
+  /*starting from y direction*/
+  for(size_t i=world_rank;i<cell*cell;i=i+world_size){
+    nx=i%cell;
+    nz=(i-nx)/cell;
+    py.clear();
+    for(size_t j=0;j<cell;j++){
+     nindex=nx+j*cell+nz*cell*cell;
+     if(py.size()==0){
+      py.push_back(reducepolar[0+nindex*3]);
+     }
+     else{
+      if(std::fabs(average(py)-reducepolar[0+nindex*3])/std::fabs(average(py))>decay_rate){
+        record_start=j;
+        break;
+      }
+     }
+    }
+    py.clear();
+    for(size_t j=record_start;j<cell+record_start;j++){
+      nindex=nx+j*cell+nz*cell*cell;
+      if(px.size()==0){
+        px.push_back(reducepolar[0+nindex*3]);
+      }
+      else{
+        if(std::fabs(average(py)-reducepolar[0+nindex*3])/std::fabs(average(py))>decay_rate){
+          domainsizecount[py.size()]=domainsizecount[py.size()]+1;
+          py.clear();
+        }
+        else{
+          py.push_back(reducepolar[0+nindex*3]);
+        }
+      }
+    }
+  }
+  /*z direction*/
+  for(size_t i=world_rank;i<cell*cell;i=i+world_size){
+    nx=i%cell;
+    ny=(i-nx)/cell;
+    pz.clear();
+    for(size_t j=0;j<cell;j++){
+     nindex=nx+ny*cell+j*cell*cell;
+     if(pz.size()==0){
+      pz.push_back(reducepolar[0+nindex*3]);
+     }
+     else{
+      if(std::fabs(average(pz)-reducepolar[0+nindex*3])/std::fabs(average(pz))>decay_rate){
+        record_start=j;
+        break;
+      }
+     }
+    }
+    pz.clear();
+    for(size_t j=record_start;j<cell+record_start;j++){
+      nindex=nx+ny*cell+j*cell*cell;
+      if(pz.size()==0){
+        pz.push_back(reducepolar[0+nindex*3]);
+      }
+      else{
+        if(std::fabs(average(pz)-reducepolar[0+nindex*3])/std::fabs(average(pz))>decay_rate){
+          domainsizecount[pz.size()]=domainsizecount[pz.size()]+1;
+          pz.clear();
+        }
+        else{
+          pz.push_back(reducepolar[0+nindex*3]);
         }
       }
     }
