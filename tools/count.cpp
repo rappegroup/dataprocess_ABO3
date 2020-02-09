@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <mpi.h>
 #include <string>
+#include <cmath>
 #include <list>
 double average(std::list<double>& listA){
   double sum=0.0;
@@ -54,6 +55,7 @@ int main(){
     for(size_t frame=0;frame<simulationtime;frame++){
       offset=(frame*(3*cell*cell*cell)+loop*3)*sizeof(double);
       MPI_File_read_at(mpifile,offset,localpolar,3,MPI::DOUBLE,&status);
+      std::cout<<localpolar[0]<<" "<<localpolar[1]<<" "<<localpolar[2]<<std::endl;
       px.push_back(localpolar[0]);
       py.push_back(localpolar[1]);
       pz.push_back(localpolar[2]);
