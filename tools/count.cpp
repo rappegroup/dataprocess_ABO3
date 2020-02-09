@@ -12,7 +12,7 @@ double average(std::list<double>& listA){
     sum=sum+*a;
     count=count+1;
   }
-  if(count=0){
+  if(count==0){
     return 0.0;
   }
   else{
@@ -32,7 +32,7 @@ int next(int i,int direction,int period){
 }
 int main(){
   MPI_Init(NULL,NULL);
-  int simulationtime=100000/200;
+  int simulationtime=400/200;
   int cell=20;
   int world_rank,world_size;
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
@@ -53,13 +53,13 @@ int main(){
     py.clear();
     pz.clear();
     for(size_t frame=0;frame<simulationtime;frame++){
-      offset=(frame*(3*cell*cell*cell)+loop*3)*sizeof(double);
+      offset=(frame*cell*cell*cell+loop)*3*sizeof(double);
       MPI_File_read_at(mpifile,offset,localpolar,3,MPI::DOUBLE,&status);
-      std::cout<<localpolar[0]<<" "<<localpolar[1]<<" "<<localpolar[2]<<std::endl;
       px.push_back(localpolar[0]);
       py.push_back(localpolar[1]);
       pz.push_back(localpolar[2]);
     }
+    std::cout<<average(px)<<" "<<average(py)<<" "<<average(pz)<<std::endl;
     polaraverage[loop*3+0]=average(px);
     polaraverage[loop*3+1]=average(py);
     polaraverage[loop*3+2]=average(pz);
