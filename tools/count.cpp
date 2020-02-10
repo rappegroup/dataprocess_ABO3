@@ -110,7 +110,6 @@ int main(){
     }
   }
   /*starting from y direction*/
-  /*
   for(size_t i=world_rank;i<cell*cell;i=i+world_size){
     nx=i%cell;
     nz=(i-nx)/cell;
@@ -128,8 +127,9 @@ int main(){
      }
     }
     py.clear();
+    std::cout<<record_start<<std::endl;
     for(size_t j=record_start;j<cell+record_start;j++){
-      nindex=nx+j*cell+nz*cell*cell;
+      nindex=(nx+j*cell+nz*cell*cell)%cell;
       if(px.size()==0){
         px.push_back(reducepolar[1+nindex*3]);
       }
@@ -144,13 +144,14 @@ int main(){
       }
     }
   }
+  /*
   //z direction
   for(size_t i=world_rank;i<cell*cell;i=i+world_size){
     nx=i%cell;
     ny=(i-nx)/cell;
     pz.clear();
     for(size_t j=0;j<cell;j++){
-     nindex=nx+ny*cell+j*cell*cell;
+     nindex=(nx+ny*cell+j*cell*cell)%cell;
      if(pz.size()==0){
       pz.push_back(reducepolar[2+nindex*3]);
      }
@@ -163,7 +164,7 @@ int main(){
     }
     pz.clear();
     for(size_t j=record_start;j<cell+record_start;j++){
-      nindex=nx+ny*cell+j*cell*cell;
+      nindex=(nx+ny*cell+j*cell*cell)%cell;
       if(pz.size()==0){
         pz.push_back(reducepolar[2+nindex*3]);
       }
