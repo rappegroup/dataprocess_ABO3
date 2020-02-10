@@ -110,6 +110,7 @@ int main(){
     }
   }
   /*starting from y direction*/
+  /*
   for(size_t i=world_rank;i<cell*cell;i=i+world_size){
     nx=i%cell;
     nz=(i-nx)/cell;
@@ -117,10 +118,10 @@ int main(){
     for(size_t j=0;j<cell;j++){
      nindex=nx+j*cell+nz*cell*cell;
      if(py.size()==0){
-      py.push_back(reducepolar[0+nindex*3]);
+      py.push_back(reducepolar[1+nindex*3]);
      }
      else{
-      if(std::fabs(average(py)-reducepolar[0+nindex*3])/std::fabs(average(py))>decay_rate){
+      if(std::fabs(average(py)-reducepolar[1+nindex*3])/std::fabs(average(py))>decay_rate){
         record_start=j;
         break;
       }
@@ -130,20 +131,20 @@ int main(){
     for(size_t j=record_start;j<cell+record_start;j++){
       nindex=nx+j*cell+nz*cell*cell;
       if(px.size()==0){
-        px.push_back(reducepolar[0+nindex*3]);
+        px.push_back(reducepolar[1+nindex*3]);
       }
       else{
-        if(std::fabs(average(py)-reducepolar[0+nindex*3])/std::fabs(average(py))>decay_rate){
+        if(std::fabs(average(py)-reducepolar[1+nindex*3])/std::fabs(average(py))>decay_rate){
           domainsizecount[py.size()]=domainsizecount[py.size()]+1;
           py.clear();
         }
         else{
-          py.push_back(reducepolar[0+nindex*3]);
+          py.push_back(reducepolar[1+nindex*3]);
         }
       }
     }
   }
-  /*z direction*/
+  //z direction
   for(size_t i=world_rank;i<cell*cell;i=i+world_size){
     nx=i%cell;
     ny=(i-nx)/cell;
@@ -151,10 +152,10 @@ int main(){
     for(size_t j=0;j<cell;j++){
      nindex=nx+ny*cell+j*cell*cell;
      if(pz.size()==0){
-      pz.push_back(reducepolar[0+nindex*3]);
+      pz.push_back(reducepolar[2+nindex*3]);
      }
      else{
-      if(std::fabs(average(pz)-reducepolar[0+nindex*3])/std::fabs(average(pz))>decay_rate){
+      if(std::fabs(average(pz)-reducepolar[2+nindex*3])/std::fabs(average(pz))>decay_rate){
         record_start=j;
         break;
       }
@@ -164,19 +165,20 @@ int main(){
     for(size_t j=record_start;j<cell+record_start;j++){
       nindex=nx+ny*cell+j*cell*cell;
       if(pz.size()==0){
-        pz.push_back(reducepolar[0+nindex*3]);
+        pz.push_back(reducepolar[2+nindex*3]);
       }
       else{
-        if(std::fabs(average(pz)-reducepolar[0+nindex*3])/std::fabs(average(pz))>decay_rate){
+        if(std::fabs(average(pz)-reducepolar[2+nindex*3])/std::fabs(average(pz))>decay_rate){
           domainsizecount[pz.size()]=domainsizecount[pz.size()]+1;
           pz.clear();
         }
         else{
-          pz.push_back(reducepolar[0+nindex*3]);
+          pz.push_back(reducepolar[2+nindex*3]);
         }
       }
     }
   }
+  */
   MPI_Allreduce(domainsizecount,domainsizecount_reduce,cell,MPI::INT,MPI_SUM,MPI_COMM_WORLD);
   if(world_rank==0){
     for(size_t i=0;i<cell;i++){
