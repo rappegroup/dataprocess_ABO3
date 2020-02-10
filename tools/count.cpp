@@ -32,7 +32,7 @@ int next(int i,int direction,int period){
 }
 int main(){
   MPI_Init(NULL,NULL);
-  int simulationtime=400/200;
+  int simulationtime=4000/200;
   int cell=20;
   int world_rank,world_size;
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
@@ -45,8 +45,10 @@ int main(){
   std::list<double> px,py,pz;
   MPI_File_open(MPI_COMM_WORLD,filename.c_str(),MPI_MODE_RDONLY,MPI_INFO_NULL,&mpifile);
   double* polaraverage=new double [3*cell*cell*cell];
+  double* reducepolar=new double [3*cell*cell*cell];
   for(size_t i=0;i<3*cell*cell*cell;i++){
     polaraverage[i]=0.0;
+    reducepolar[i]=0.0;
   }
   for(size_t loop=world_rank;loop<cell*cell*cell;loop=loop+world_size){
     px.clear();
@@ -63,7 +65,6 @@ int main(){
     polaraverage[loop*3+1]=average(py);
     polaraverage[loop*3+2]=average(pz);
   }
-  double* reducepolar=new double [3*cell*cell*cell];
   int* domainsizecount=new int [cell];
   int* domainsizecount_reduce=new int [cell];
   MPI_Allreduce(polaraverage,reducepolar,3*cell*cell*cell,MPI::DOUBLE,MPI_SUM,MPI_COMM_WORLD);
@@ -110,6 +111,7 @@ int main(){
     }
   }
   /*starting from y direction*/
+  /*
   for(size_t i=world_rank;i<cell*cell;i=i+world_size){
     nx=i%cell;
     nz=(i-nx)/cell;
@@ -144,6 +146,7 @@ int main(){
       }
     }
   }
+  */
   /*
   //z direction
   for(size_t i=world_rank;i<cell*cell;i=i+world_size){
@@ -183,7 +186,7 @@ int main(){
   MPI_Allreduce(domainsizecount,domainsizecount_reduce,cell,MPI::INT,MPI_SUM,MPI_COMM_WORLD);
   if(world_rank==0){
     for(size_t i=0;i<cell;i++){
-      std::cout<<i<<" "<<domainsizecount[i]<<std::endl;
+      std::cout<<i<<" "<<domainsizecount_reduce[i]<<std::endl;
     }
   }
   MPI_File_close(&mpifile);
