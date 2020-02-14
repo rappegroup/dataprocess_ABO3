@@ -207,6 +207,8 @@ int main(){
       MPI_Barrier(MPI_COMM_WORLD);
 			if(polarization_on){
 				analyzepolar(A,B,oxygen,period,cell);
+        displace_A_unit(A,oxygen,period,cell);
+        displace_B_unit(B,oxygen,period,cell);
 			}
       if(position_variance_on){
         analyzeposition_variance(A,B,oxygen,period,cell,signal);
