@@ -293,7 +293,7 @@ void calculate_local_die(int cell,double local_volume,double temperature){
 void displace_A_unit(atom* A,atom* oxygen,double* p,int cell){
   int* neighbor;
 	double* sum=new double[3];
-  double* dist=new double[3];
+  double* dist;
   double sumall;
   int world_rank;
   int world_size;
@@ -304,7 +304,7 @@ void displace_A_unit(atom* A,atom* oxygen,double* p,int cell){
   MPI_File fh;
   MPI_Offset initial_offset,offset;
   MPI_Status status;
-  MPI_File_open(MPI_COMM_WORLD,"polar_direction_Asite.bin",MPI_MODE_APPEND,MPI_INFO_NULL,&fh);
+  MPI_File_open(MPI_COMM_WORLD,"polar_direction_Asite.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND,MPI_INFO_NULL,&fh);
   MPI_File_get_size(fh,&initial_offset);
 	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
     i=layer*world_size+world_rank;
@@ -320,19 +320,18 @@ void displace_A_unit(atom* A,atom* oxygen,double* p,int cell){
       delete [] dist;
 		} 
     delete [] neighbor;
-    sumall=0.0;
-    for(size_t i=0;i<3;i++){
-      sumall=sum[i]*sum[i]+sumall;
-    }
-    for(size_t i=0;i<3;i++){
-      sum[i]=sum[i]/sqrt(sumall);
-    }
-    MPI_File_write_at_all(fh,offset,sum,3,MPI_DOUBLE,&status);
+   sumall=0.0;
+   for(size_t k=0;k<3;k++){
+     sumall=sum[k]*sum[k]+sumall;
+   }
+   for(size_t k=0;k<3;k++){
+     sum[k]=sum[k]/sqrt(sumall);
+   }
+   MPI_File_write_at_all(fh,offset,sum,3,MPI_DOUBLE,&status);
     }
 	}
-  MPI_File_close(&fh);
   delete [] sum;
-  delete [] dist;
+  MPI_File_close(&fh);
 }
 /*displace Bsite unit vector*/
 void displace_B_unit(atom* B,atom* oxygen,double* p,int cell){
@@ -349,7 +348,7 @@ void displace_B_unit(atom* B,atom* oxygen,double* p,int cell){
   MPI_File fh;
   MPI_Offset initial_offset,offset;
   MPI_Status status;
-  MPI_File_open(MPI_COMM_WORLD,"polar_direction_Bsite.bin",MPI_MODE_APPEND,MPI_INFO_NULL,&fh);
+  MPI_File_open(MPI_COMM_WORLD,"polar_direction_Bsite.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND,MPI_INFO_NULL,&fh);
   MPI_File_get_size(fh,&initial_offset);
 	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
     i=layer*world_size+world_rank;
@@ -365,17 +364,16 @@ void displace_B_unit(atom* B,atom* oxygen,double* p,int cell){
       delete [] dist;
 		}
     sumall=0.0;
-    for(size_t i=0;i<3;i++){
-      sumall=sum[i]*sum[i]+sumall;
+    for(size_t j=0;j<3;j++){
+      sumall=sum[j]*sum[j]+sumall;
     }
-    for(size_t i=0;i<3;i++){
-      sum[i]=sum[i]/sqrt(sumall);
+    for(size_t j=0;j<3;j++){
+      sum[j]=sum[j]/sqrt(sumall);
     }
     MPI_File_write_at_all(fh,offset,sum,3,MPI_DOUBLE,&status);
     }
 	}
   delete [] sum;
-  delete [] dist;
   MPI_File_close(&fh);
 }
 /*A more general way for Displacement Calculation*/

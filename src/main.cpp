@@ -36,7 +36,6 @@ int main(){
     info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature,position_variance_on,local_die);
 	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
 	}
-  std::cout<<"I am here fine:"<<std::endl;
   MPI_Bcast(&cell,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&velocity_on,1,MPI_INT,0,MPI_COMM_WORLD);
@@ -208,7 +207,7 @@ int main(){
 			if(polarization_on){
 				analyzepolar(A,B,oxygen,period,cell);
         displace_A_unit(A,oxygen,period,cell);
-        displace_B_unit(B,oxygen,period,cell);
+       displace_B_unit(B,oxygen,period,cell);
 			}
       if(position_variance_on){
         analyzeposition_variance(A,B,oxygen,period,cell,signal);
