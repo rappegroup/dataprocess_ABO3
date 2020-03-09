@@ -93,10 +93,10 @@ int main(){
   MPI_Datatype types[4];
   MPI_Aint displs[4];
   MPI_Datatype MPI_atom;
-  MPI_Address(atom_demo.position,&displs[0]);
-  MPI_Address(atom_demo.charge,&displs[1]);
-  MPI_Address(&atom_demo.type,&displs[2]);
-  MPI_Address(&atom_demo.tick,&displs[3]);
+  MPI_Get_address(atom_demo.position,&displs[0]);
+  MPI_Get_address(atom_demo.charge,&displs[1]);
+  MPI_Get_address(&atom_demo.type,&displs[2]);
+  MPI_Get_address(&atom_demo.tick,&displs[3]);
   for(int i=3;i>=0;i--){
     displs[i]=displs[i]-displs[0];
   }
@@ -104,7 +104,7 @@ int main(){
   types[1]=MPI_DOUBLE;
   types[2]=MPI_CHAR;
   types[3]=MPI_INT;
-  MPI_Type_struct(4,blockcounts,displs,types,&MPI_atom);
+  MPI_Type_create_struct(4,blockcounts,displs,types,&MPI_atom);
   MPI_Type_commit(&MPI_atom);
 	std::string la_pattern="ITEM: BOX BOUNDS pp pp pp";
 	std::string coord_pattern="ITEM: ATOMS x y z ";

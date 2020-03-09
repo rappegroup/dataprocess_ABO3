@@ -18,6 +18,8 @@ double far(atom* a,atom* b,double* p);
 double* displace_average_A(atom *A,atom *oxygen,double* p,int cell);
 double* displace_average_B(atom *B,atom *oxygen,double* p,int cell);
 double* polar_average(atom *A,atom *B,atom *oxygen,double* p,int cell);
+void displace_A_unit(atom* A,atom* oxygen,double* p,int cell);
+void displace_B_unit(atom* B,atom* oxygen,double* p,int cell);
 double displace_average_B_scalar(atom *B,atom *oxygen,double* p,int cell);
 double* displace_average_Asite(atom* A,atom* oxygen,double* p,int cell,char type_id);
 double* displace_average_Bsite(atom* B,atom* oxygen,double* p,int cell,char type_id);
