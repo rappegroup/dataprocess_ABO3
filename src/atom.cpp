@@ -1,6 +1,7 @@
 #include "atom.h"
 #include "polarconfig.h"
 #include <iostream>
+#include <sstream>
 #include <cmath>
 #include <fstream>
 #include <vector>
@@ -9,6 +10,7 @@
 #include <list>
 #include <math.h>
 #include <mpi.h>
+#include <algorithm>
 //a=origin,b=end
 double* distance(atom* a,atom* b,double* p){
 	double* dist=new double[3];
@@ -20,6 +22,7 @@ double* distance(atom* a,atom* b,double* p){
 	}
 	return dist;
 }
+
 double* distance(double* a,double* b,double* p){
 	double* dist=new double[3];
 	double temp;

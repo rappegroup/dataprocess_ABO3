@@ -18,6 +18,7 @@ namespace polarconfig
  std::list<double> px;
  std::list<double> py;
  std::list<double> pz;
+ int** mapunit;
  double tilt_one_ave;
  double tilt_two_ave;
  double tilt_three_ave;

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <list>
 #include "polarconfig.h"
+#include <string>
 typedef struct Atom{
 	double position[3];
 	double charge[3];
@@ -10,6 +11,7 @@ typedef struct Atom{
 	int tick;
 }atom;
 void sort(double* input,int dim);
+void unitcell(std::string file,int cell);
 double* distance(atom *a,atom *b,double *p);
 double norm(double* p,int dim);
 /*no periodical boudary condition*/
