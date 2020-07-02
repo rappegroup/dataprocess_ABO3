@@ -17,6 +17,7 @@ double norm(double* p,int dim);
 /*no periodical boudary condition*/
 double* distance(double*a ,double* b);
 double far(atom* a,atom* b,double* p);
+double far(double* a,double* b,double* p);
 double* displace_average_A(atom *A,atom *oxygen,double* p,int cell);
 double* displace_average_B(atom *B,atom *oxygen,double* p,int cell);
 double* polar_average(atom *A,atom *B,atom *oxygen,double* p,int cell);

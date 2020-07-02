@@ -20,7 +20,8 @@ namespace polarconfig
    extern std::list<double> px;
    extern std::list<double> py;
    extern std::list<double> pz;
-   int** mapunit;
+   extern int** mapunit;
+   extern int* map1D;
    extern std::vector<std::list<double> > px_local;
    extern std::vector<std::list<double> > py_local;
    extern std::vector<std::list<double> > pz_local;
@@ -31,6 +32,8 @@ namespace polarconfig
    extern double tilt_two_ave;
    extern double tilt_three_ave;
 	 extern double temperature;
-	 extern int cell;
+   extern int Nx;
+   extern int Ny;
+   extern int Nz;
 }
 #endif
