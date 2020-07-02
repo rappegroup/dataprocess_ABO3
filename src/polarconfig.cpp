@@ -19,9 +19,12 @@ namespace polarconfig
  std::list<double> py;
  std::list<double> pz;
  int** mapunit;
+ int* map1D;
  double tilt_one_ave;
  double tilt_two_ave;
  double tilt_three_ave;
  double temperature;
- int cell;
+ int Nx;
+ int Ny;
+ int Nz;
 }

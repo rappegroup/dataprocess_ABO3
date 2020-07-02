@@ -54,6 +54,16 @@ double far(atom* a,atom* b,double* p){
   delete [] temp;
 	return sqrt(sum);
 }
+double far(double* a,double* b,double* p){
+  double* temp;
+  double sum=0.0;
+  temp=distance(a,b,p);
+  for(size_t i=0;i<3;i++){
+    sum=sum+temp[i]*temp[i];
+  }
+  delete [] temp;
+  return sqrt(sum);
+}
 int* changeindex(int index,int cell){
 	int* re=new int[3];
 	re[2]=floor(index/(cell*cell));
@@ -806,10 +816,12 @@ void outpolar(){
 	fileout<<"polarization variance is:"<<std::endl;
 	fileout<<good[pall[0]]<<" "<<good[pall[1]]<<" "<<good[pall[2]]<<std::endl;
 	fileout<<"the relative dielectric constant(epsilon0) is :"<<std::endl;
-    int cell=polarconfig::cell;
-	double dx=dielectric(good[pall[0]],lx*ly*lz*cell*cell*cell,polarconfig::temperature);
-	double dy=dielectric(good[pall[1]],lx*ly*lz*cell*cell*cell,polarconfig::temperature);
-	double dz=dielectric(good[pall[2]],lx*ly*lz*cell*cell*cell,polarconfig::temperature);
+  int Nx=polarconfig::Nx;
+  int Ny=polarconfig::Ny;
+  int Nz=polarconfig::Nz;
+	double dx=dielectric(good[pall[0]],lx*ly*lz*Nx*Ny*Nz,polarconfig::temperature);
+	double dy=dielectric(good[pall[1]],lx*ly*lz*Nx*Ny*Nz,polarconfig::temperature);
+	double dz=dielectric(good[pall[2]],lx*ly*lz*Nx*Ny*Nz,polarconfig::temperature);
 	fileout<<dx<<" "<<dy<<" "<<dz<<std::endl;
 	fileout<<(dx+dy+dz)/3.0<<std::endl;
 	fileout.close();
