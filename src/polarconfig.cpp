@@ -20,6 +20,12 @@ namespace polarconfig
  std::list<double> pz;
  int** mapunit;
  int* map1D;
+ std::vector<std::list<double> > px_local;
+ std::vector<std::list<double> > py_local;
+ std::vector<std::list<double> > pz_local;
+ std::vector<double> epsilon_x;
+ std::vector<double> epsilon_y;
+ std::vector<double> epsilon_z;
  double tilt_one_ave;
  double tilt_two_ave;
  double tilt_three_ave;
@@ -27,4 +33,5 @@ namespace polarconfig
  int Nx;
  int Ny;
  int Nz;
+ int cell;
 }

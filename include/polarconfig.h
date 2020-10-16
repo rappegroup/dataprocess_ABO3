@@ -31,9 +31,10 @@ namespace polarconfig
    extern double tilt_one_ave;
    extern double tilt_two_ave;
    extern double tilt_three_ave;
-	 extern double temperature;
+   extern double temperature;
    extern int Nx;
    extern int Ny;
    extern int Nz;
+   extern int cell;
 }
 #endif
