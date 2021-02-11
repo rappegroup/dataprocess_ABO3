@@ -20,6 +20,8 @@ namespace polarconfig
  std::list<double> pz;
  int** mapunit;
  int* map1D;
+ int** mapunitA;
+ int* map1DA;
  std::vector<std::list<double> > px_local;
  std::vector<std::list<double> > py_local;
  std::vector<std::list<double> > pz_local;

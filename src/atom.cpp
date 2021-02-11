@@ -338,7 +338,7 @@ void displace_A_unit(atom* A,atom* oxygen,double* p,int cell){
      sumall=sum[k]*sum[k]+sumall;
    }
    for(size_t k=0;k<3;k++){
-     sum[k]=sum[k]/sqrt(sumall);
+     sum[k]=sum[k]/12.0;
    }
    MPI_File_write_at_all(fh,offset,sum,3,MPI_DOUBLE,&status);
     }
@@ -381,7 +381,7 @@ void displace_B_unit(atom* B,atom* oxygen,double* p,int cell){
       sumall=sum[j]*sum[j]+sumall;
     }
     for(size_t j=0;j<3;j++){
-      sum[j]=sum[j]/sqrt(sumall);
+      sum[j]=sum[j]/6.0;
     }
     MPI_File_write_at_all(fh,offset,sum,3,MPI_DOUBLE,&status);
     }

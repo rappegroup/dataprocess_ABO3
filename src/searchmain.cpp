@@ -54,6 +54,16 @@ int main(){
   std::cout<<" finished by searching "<<std::endl;
   std::cout<<" the periodical length is: "<<std::endl;
   std::cout<<Nx<<" "<<Ny<<" "<<Nz<<std::endl;
+  std::cout<<"the Asite neighbors are: "<<std::endl;
+  for(size_t i=0;i<Nx*Ny*Nz;i++){
+    for(size_t j=0;j<12;j++){
+      std::cout<<polarconfig::mapunitA[i][j]<<" ";
+    }
+    std::cout<<std::endl;
+  }
+  std::cout<<" finished by searching "<<std::endl;
+  std::cout<<" the periodical length is: "<<std::endl;
+  std::cout<<Nx<<" "<<Ny<<" "<<Nz<<std::endl;
   }
   MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&velocity_on,1,MPI_INT,0,MPI_COMM_WORLD);
@@ -224,6 +234,7 @@ int main(){
       MPI_Barrier(MPI_COMM_WORLD);
 			if(polarization_on){
 				polar_calculate_search(A,B,oxygen,period,Nx,Ny,Nz);
+        dispA_calculate_search(A,B,oxygen,period,Nx,Ny,Nz);
 			}
       getnewframe=0;
       }

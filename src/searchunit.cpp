@@ -131,8 +131,11 @@ void searchneighbor(std::string file,int cell){
 void searchneighbor(std::string file,int Nx,int Ny,int Nz){
   polarconfig::mapunit=new int* [Nx*Ny*Nz];
   polarconfig::map1D=new int [Nx*Ny*Nz*(6+8)];
+  polarconfig::mapunitA=new int* [Nx*Ny*Nz];
+  polarconfig::map1DA=new int [Nx*Ny*Nz*12];
   for(size_t i=0;i<Nx*Ny*Nz;i++){
     polarconfig::mapunit[i]=&polarconfig::map1D[i*(6+8)];//1 Fe with 6 Oxygen, 8 Bi;
+    polarconfig::mapunitA[i]=&polarconfig::map1DA[i*12];
   }
   MPI_Barrier(MPI_COMM_WORLD);
   int world_rank,world_size;
@@ -235,11 +238,23 @@ void searchneighbor(std::string file,int Nx,int Ny,int Nz){
       polarconfig::mapunit[i][j+8]=sequence_two[j].second;
     }
   }
+  std::vector<std::pair<double,int> > sequence_three(3*Nx*Ny*Nz,std::pair<double,int>(0.0,0));
+  for(size_t i=0;i<Nx*Ny*Nz;i++){
+    for(size_t j=0;j<Nx*Ny*Nz*3;j++){
+      tempdouble=far(asite[i],osite[j],period);
+      sequence_three[j]=std::pair<double,int>(tempdouble,j);
+    }
+    std::sort(sequence_three.begin(),sequence_three.end());
+    for(size_t j=0;j<12;j++){
+    polarconfig::mapunitA[i][j]=sequence_three[j].second;
+    }
+  }
   }
   else{
   };
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Bcast(polarconfig::map1D,Nx*Ny*Nz*(6+8),MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Bcast(polarconfig::map1DA,Nx*Ny*Nz*12,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Barrier(MPI_COMM_WORLD);
 }
 void polar_calculate_search(atom *A,atom *B,atom *oxygen,double *p,int cell){
@@ -343,6 +358,43 @@ void polar_calculate_search(atom *A,atom *B,atom *oxygen,double *p,int Nx,int Ny
       }
     for(size_t m=0;m<3;m++){
       sum[m]=sum[m]/volume*16;
+    }
+    offset=3*sizeof(double)*i;
+    MPI_File_write_at_all(fh,initial_offset+offset,sum,3,MPI_DOUBLE,&status);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+	}
+  MPI_File_close(&fh);
+}
+void dispA_calculate_search(atom *A,atom *B,atom *oxygen,double *p,int Nx,int Ny,int Nz){
+	double* dist;
+	double* sum=new double[3];
+  int world_rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+  int MPI_LOOP_COUNT=ceil((Nx*Ny*Nz+0.0)/world_size);
+  int i=0;
+  MPI_File fh;
+  MPI_File_open(MPI_COMM_WORLD,"dispA.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND,MPI_INFO_NULL,&fh);
+  MPI_Offset initial_offset;
+  MPI_Offset offset;
+  MPI_File_get_position(fh,&initial_offset);
+  MPI_Status status;
+  int* neighbor;
+	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
+    i=layer*world_size+world_rank;
+    if(i<Nx*Ny*Nz){
+		for(size_t k=0;k<3;k++){
+			sum[k]=0.0;
+		}
+		for(size_t j=0;j<12;j++){
+			dist=distance(A+i,polarconfig::mapunitA[i][j]+oxygen,p);
+			sum_together(sum,dist,3);
+			delete [] dist;
+		}
+    for(size_t m=0;m<3;m++){
+      sum[m]=sum[m]/12.0;
     }
     offset=3*sizeof(double)*i;
     MPI_File_write_at_all(fh,initial_offset+offset,sum,3,MPI_DOUBLE,&status);
