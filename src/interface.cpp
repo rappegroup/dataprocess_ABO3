@@ -14,7 +14,7 @@ std::vector<std::string> split(std::string s, std::string delimiter) {
 			res.push_back(s.substr(pos_start));
 		  return res;
 }
-void info(int& cell,std::string& dumpfile,std::string& calistfile,int& velocity_on,int& polarization_on,double& temperature,int& position_variance_on,int& local_die){
+void info(int& cell,int& Nx,int& Ny,int& Nz,std::string& dumpfile,std::string& calistfile,int& velocity_on,int& polarization_on,double& temperature,int& position_variance_on,int& local_die){
 	std::string temp;
 	getline(std::cin,temp);//rm the first line, this is the tile and useless.
 	std::vector<std::string> input;
@@ -28,6 +28,24 @@ void info(int& cell,std::string& dumpfile,std::string& calistfile,int& velocity_
 			flag=flag.substr(0,flag.find(","));
 			stre.str(flag);
 		  stre>>dumpfile;
+			stre.clear();
+		}
+		else if(input[0].find("Nx")!=std::string::npos){
+			flag=flag.substr(0,flag.find(","));
+			stre.str(flag);
+			stre>>Nx;
+			stre.clear();
+		}
+		else if(input[0].find("Ny")!=std::string::npos){
+			flag=flag.substr(0,flag.find(","));
+			stre.str(flag);
+			stre>>Ny;
+			stre.clear();
+		}
+		else if(input[0].find("Nz")!=std::string::npos){
+			flag=flag.substr(0,flag.find(","));
+			stre.str(flag);
+			stre>>Nz;
 			stre.clear();
 		}
 		else if(input[0].find("cell")!=std::string::npos){

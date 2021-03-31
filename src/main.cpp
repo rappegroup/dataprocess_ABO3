@@ -33,10 +33,13 @@ int main(){
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   std::list<double*> ve_list;
   if(world_rank==0){
-    info(cell,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature,position_variance_on,local_die);
+    info(cell,polarconfig::Nx,polarconfig::Ny,polarconfig::Nz,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature,position_variance_on,local_die);
 	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
 	}
   MPI_Bcast(&cell,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&polarconfig::Nz,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&polarconfig::Ny,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&polarconfig::Nx,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&velocity_on,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarization_on,1,MPI_INT,0,MPI_COMM_WORLD);
