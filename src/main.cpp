@@ -111,6 +111,7 @@ int main(){
   }
   chargefile.close();
   }
+  MPI_Finalize();
   atom atom_demo;
   int blockcounts[4]={3,3,1,1};
   MPI_Datatype types[4];
