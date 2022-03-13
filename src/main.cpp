@@ -23,6 +23,7 @@ int main(){
   std::fstream dump;
   std::fstream calist;
   std::string dumpfile;
+  std::fstream chargefile;
   int velocity_on=1;
   int polarization_on=1;
   int position_variance_on=1;
@@ -57,11 +58,16 @@ int main(){
 	atom* B=new atom[cell*cell*cell];
 	atom* oxygen=new atom[3*cell*cell*cell];
   clock_t begin=clock();
+  if(world_rank==0){
+    chargefile.open("CHARGE.dat",std::fstream::in);
 	for(size_t i=0;i<cell*cell*cell;i++){
 		A[i].type='b';
 		A[i].charge[0]=2.90;
-    A[i].charge[1]=2.90;
-    A[i].charge[2]=2.90;
+        A[i].charge[1]=2.90;
+        A[i].charge[2]=2.90;
+        for(size_t j=0;j<3;j++){
+        chargefile>>A[i].charge[j];
+        }
   	}
 	int ca_num;
 	while(calist>>ca_num){
@@ -72,24 +78,38 @@ int main(){
     for(size_t j=0;j<3;j++){
 		B[i].charge[j]=6.70;
     }
+    for(size_t j=0;j<3;j++){
+        chargefile>>B[i].charge[j];
+        }
 	}
 	for(size_t i=0;i<cell*cell*cell;i++){
 		oxygen[i].type='o';
 		oxygen[i].charge[0]=-2.40;
     oxygen[i].charge[1]=-2.40;
     oxygen[i].charge[2]=-4.80;
+    for(size_t j=0;j<3;j++){
+        chargefile>>oxygen[i].charge[j];
+        }
 	}
   for(size_t i=cell*cell*cell;i<2*cell*cell*cell;i++){
     oxygen[i].type='o';
     oxygen[i].charge[0]=-2.40;
     oxygen[i].charge[1]=-4.80;
     oxygen[i].charge[2]=-2.40;
+    for(size_t j=0;j<3;j++){
+        chargefile>>oxygen[i].charge[j];
+        }
   }
   for(size_t i=2*cell*cell*cell;i<3*cell*cell*cell;i++){
     oxygen[i].type='o';
     oxygen[i].charge[0]=-4.80;
     oxygen[i].charge[1]=-2.40;
     oxygen[i].charge[2]=-2.40;
+    for(size_t j=0;j<3;j++){
+        chargefile>>oxygen[i].charge[j];
+        }
+  }
+  chargefile.close();
   }
   atom atom_demo;
   int blockcounts[4]={3,3,1,1};
