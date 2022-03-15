@@ -779,29 +779,7 @@ void outpolar(){
 		pyi++;
 		pzi++;
 	}
-	var[0]=variance(polarconfig::px);
-	var[1]=variance(polarconfig::py);
-	var[2]=variance(polarconfig::pz);
-	std::map <double,double> good;
-	for(size_t i=0;i<3;i++){
-		good.insert(good.end(),std::pair <double,double> (pall[i],var[i]));
-	}
-//	sort(pall.begin(),pall.end());
-	fileout<<"the polarization is (absolute value):"<<std::endl;
-	fileout<<pall[0]<<" "<<pall[1]<<" "<<pall[2]<<std::endl;
-	fileout<<"polarization variance is:"<<std::endl;
-	fileout<<good[pall[0]]<<" "<<good[pall[1]]<<" "<<good[pall[2]]<<std::endl;
-	fileout<<"the relative dielectric constant(epsilon0) is :"<<std::endl;
-    int Nx=polarconfig::Nx;
-    int Ny=polarconfig::Ny;
-    int Nz=polarconfig::Nz;
-	double dx=dielectric(good[pall[0]],lx*ly*lz*Nx*Ny*Nz,polarconfig::temperature);
-	double dy=dielectric(good[pall[1]],lx*ly*lz*Nx*Ny*Nz,polarconfig::temperature);
-	double dz=dielectric(good[pall[2]],lx*ly*lz*Nx*Ny*Nz,polarconfig::temperature);
-	fileout<<dx<<" "<<dy<<" "<<dz<<std::endl;
-	fileout<<(dx+dy+dz)/3.0<<std::endl;
-	fileout.close();
-    fileout.close();
+    pout.close();
 }
 void analyzeposition_variance(atom* A,atom* B,atom* oxygen,double* period,int cell,size_t signal){
   /*store the first position position on the disk and doing nothing*/
