@@ -11,7 +11,44 @@
 #include <math.h>
 #include <mpi.h>
 #include <algorithm>
+#include <string>
 //a=origin,b=end
+void readMD(std::fstream& dump,int Nx,int Ny,int Nz,double** period,atom** A,atom** B,atom** oxygen,int steps){
+	std::string la_pattern="ITEM: BOX BOUNDS pp pp pp";
+	std::string coord_pattern="ITEM: ATOMS x y z ";
+    std::string line="0";
+    double x1;
+    double x2;
+    for(size_t time=0;time<steps;time++){
+        for(size_t i=0;i<5;i++){
+            std::getline(dump,line);
+        }
+        for(size_t i=0;i<3;i++){
+	    		dump>>x1;
+	    		dump>>x2;
+	    		period[time][i]=x2-x1;
+        }
+        getline(dump,line);
+        getline(dump,line);
+        for(size_t i=0;i<Nx*Ny*Nz;i++){
+            for(size_t j=0;j<3;j++){
+                dump >> A[time][i].position[j];
+            }
+        }
+	    for(size_t i=0;i<Nx*Ny*Nz;i++){
+	    	for(size_t j=0;j<3;j++){
+	    		dump>>B[time][i].position[j];
+	    	}
+	    }
+	    for(size_t i=0;i<3*Nx*Ny*Nz;i++){
+	    	for(size_t j=0;j<3;j++){
+	    		dump>>oxygen[time][i].position[j];
+	    	}
+	    }
+        getline(dump,line);
+        std::cout<<"Readling"<<time<<std::endl;
+    }
+}
 double* distance(atom* a,atom* b,double* p){
 	double* dist=new double[3];
 	double temp;
@@ -156,7 +193,7 @@ double variance(std::list<double> &input){
 	}
 	return sum/input.size();
 }
-double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
+double* polar_average(atom *A,atom *B,atom *oxygen,double *p,double* polarlocal,int cell){
 	std::list<double> px;
 	std::list<double> py;
 	std::list<double> pz;
@@ -169,16 +206,13 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
 	double* sum=new double[3];
   int world_rank;
   int world_size;
+  for(size_t i=0;i<3*cell*cell*cell;i++){
+    polarlocal[i]=0.0;
+  }
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
   int i=0;
-  MPI_File fh;
-  MPI_File_open(MPI_COMM_WORLD,"local_polar.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND,MPI_INFO_NULL,&fh);
-  MPI_Offset initial_offset;
-  MPI_Offset offset;
-  MPI_File_get_position(fh,&initial_offset);
-  MPI_Status status;
 	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
     i=layer*world_size+world_rank;
     if(i<cell*cell*cell){
@@ -212,22 +246,26 @@ double* polar_average(atom *A,atom *B,atom *oxygen,double *p,int cell){
     for(size_t m=0;m<3;m++){
       sum[m]=sum[m]/volume*16;
     }
-    offset=3*sizeof(double)*i;
-    MPI_File_write_at_all(fh,initial_offset+offset,sum,3,MPI_DOUBLE,&status);
+    for(size_t m=0;m<3;m++){
+    polarlocal[i*3+m]=sum[m];
+    }
     }
     MPI_Barrier(MPI_COMM_WORLD);
 	}
-  MPI_File_close(&fh);
   sum[0]=sum_together(px);
   sum[1]=sum_together(py);
   sum[2]=sum_together(pz);
-	double* reduce=new double[3];
+  double* reduce=new double[3];
+  double* polarlocal_reduce=new double[3*cell*cell*cell];
   MPI_Reduce(sum,reduce,3,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Allreduce(polarlocal,polarlocal_reduce,3*cell*cell*cell,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  delete [] polarlocal;
+  polarlocal=polarlocal_reduce;
   delete [] sum;
   for(size_t i=0;i<3;i++){
     reduce[i]=reduce[i]/cell/cell/cell;
   }
-	return reduce;
+  return reduce;
 }
 void calculate_local_die(int cell,double local_volume,double temperature){
   int world_rank;
@@ -303,7 +341,7 @@ void calculate_local_die(int cell,double local_volume,double temperature){
   delete [] epz;
 }
 /*Asite displacement vector:*/
-void displace_A_unit(atom* A,atom* oxygen,double* p,int cell){
+void displace_A_unit(atom* A,atom* oxygen,double* dispAt,double* p,int cell){
   int* neighbor;
 	double* sum=new double[3];
   double* dist;
@@ -313,16 +351,13 @@ void displace_A_unit(atom* A,atom* oxygen,double* p,int cell){
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
+  for(size_t i=0;i<cell*cell*cell*3;i++){
+	dispAt[i]=0.0;
+  }
   int i=0;
-  MPI_File fh;
-  MPI_Offset initial_offset,offset;
-  MPI_Status status;
-  MPI_File_open(MPI_COMM_WORLD,"polar_direction_Asite.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND,MPI_INFO_NULL,&fh);
-  MPI_File_get_size(fh,&initial_offset);
 	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
     i=layer*world_size+world_rank;
     if(i<cell*cell*cell){
-    offset=initial_offset+i*3*sizeof(double);
 		neighbor=neighbor_o_forA(i,cell);
 		for(size_t k=0;k<3;k++){
 			sum[k]=0.0;
@@ -339,34 +374,36 @@ void displace_A_unit(atom* A,atom* oxygen,double* p,int cell){
    }
    for(size_t k=0;k<3;k++){
      sum[k]=sum[k]/12.0;
+     dispAt[3*i+k]=sum[k];
    }
-   MPI_File_write_at_all(fh,offset,sum,3,MPI_DOUBLE,&status);
     }
 	}
+  double* dispA_reduce=new double[3*cell*cell*cell];
+  MPI_Allreduce(dispAt,dispA_reduce,3*cell*cell*cell,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  for(size_t i=0;i<3*cell*cell*cell;i++){
+	dispAt[i]=dispA_reduce[i];
+  }
+   delete [] dispA_reduce;
   delete [] sum;
-  MPI_File_close(&fh);
 }
 /*displace Bsite unit vector*/
-void displace_B_unit(atom* B,atom* oxygen,double* p,int cell){
-	int* neighbor;
-	double* dist;
-	double* sum=new double[3];
+void displace_B_unit(atom* B,atom* oxygen,double* dispBt,double* p,int cell){
+  int* neighbor;
+  double* dist;
+  double* sum=new double[3];
   int world_rank;
   int world_size;
+  for(size_t i=0;i<cell*cell*cell*3;i++){
+	dispBt[i]=0.0;
+  }
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
   int i=0;
   double sumall=0.0;
-  MPI_File fh;
-  MPI_Offset initial_offset,offset;
-  MPI_Status status;
-  MPI_File_open(MPI_COMM_WORLD,"polar_direction_Bsite.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND,MPI_INFO_NULL,&fh);
-  MPI_File_get_size(fh,&initial_offset);
 	for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
     i=layer*world_size+world_rank;
     if(i<cell*cell*cell){
-    offset=initial_offset+i*3*sizeof(double);
 		neighbor=neighbor_o_forB(i,cell);
 		for(size_t k=0;k<3;k++){
 			sum[k]=0.0;
@@ -382,12 +419,17 @@ void displace_B_unit(atom* B,atom* oxygen,double* p,int cell){
     }
     for(size_t j=0;j<3;j++){
       sum[j]=sum[j]/6.0;
+      dispBt[3*i+j]=sum[j];
     }
-    MPI_File_write_at_all(fh,offset,sum,3,MPI_DOUBLE,&status);
     }
 	}
+  double* dispB_reduce=new double[3*cell*cell*cell];
+  MPI_Allreduce(dispBt,dispB_reduce,3*cell*cell*cell,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  for(size_t i=0;i<3*cell*cell*cell;i++){
+	dispBt[i]=dispB_reduce[i];
+  }
+   delete [] dispB_reduce;
   delete [] sum;
-  MPI_File_close(&fh);
 }
 /*A more general way for Displacement Calculation*/
 double* displace_average_Asite(atom* A,atom* oxygen,double* p,int cell,char type_id){
@@ -679,7 +721,7 @@ double norm(double* p,int dim){
     }
     return sqrt(sum);
 }
-void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
+void analyzepolar(atom* A,atom* B,atom* oxygen,double* dispAt,double* dispBt,double* polart,double* periodt,int cell){
 		double* dispba;
 	    double* dispca;
 	    double* dispB;
@@ -690,82 +732,16 @@ void analyzepolar(atom* A,atom* B,atom* oxygen,double* period,int cell){
     	int b;
     	int c;
     	double angle;
-	    dispB=displace_average_B(B,oxygen,period,cell);
-		disp_scalar=displace_average_B_scalar(B,oxygen,period,cell);
+	    dispB=displace_average_B(B,oxygen,periodt,cell);
+		disp_scalar=displace_average_B_scalar(B,oxygen,periodt,cell);
 		polarconfig::disp_B_scalar.push_back(disp_scalar);
 		polarconfig::disp_allB_x.push_back(dispB[0]);
 		polarconfig::disp_allB_y.push_back(dispB[1]);
 		polarconfig::disp_allB_z.push_back(dispB[2]);
-		polar=polar_average(A,B,oxygen,period,cell);
+		polar=polar_average(A,B,oxygen,periodt,polart,cell);
 		polarconfig::px.push_back(polar[0]);
 		polarconfig::py.push_back(polar[1]);
 		polarconfig::pz.push_back(polar[2]);
-			//compute the tilt angle now;
-      MPI_Barrier(MPI_COMM_WORLD);
-      int world_rank;
-      int world_size;
-      MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
-      MPI_Comm_size(MPI_COMM_WORLD,&world_size);
-      int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
-      int i=0; 
-       int count_type=0;
-       std::list<double> tilt_angle_one;
-       std::list<double> tilt_angle_two;
-       std::list<double> tilt_angle_three;
-	  for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
-        i=layer*world_size+world_rank;
-        if(i<cell*cell*cell){
-				index=changeindex(i,cell);
-				a=changeback(index[0],index[1],index[2],cell);
-				b=changeback(index[0],index[1],index[2]+1,cell);
-				c=changeback(index[0],index[1],index[2]+2,cell);
-				delete [] index;
-				angle=tiltangle(a+oxygen,b+oxygen,c+oxygen,period);
-				tilt_angle_one.push_back(angle);
-        }
-			}
-      double tilt_local=sum_together(tilt_angle_one);
-      double tilt_angle_one_sum;
-      MPI_Reduce(&tilt_local,&tilt_angle_one_sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      tilt_angle_one_sum=tilt_angle_one_sum/cell/cell/cell;
-			for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
-        i=layer*world_size+world_rank;
-        if(i<cell*cell*cell){
-				index=changeindex(i,cell);
-				a=changeback(index[0],index[1],index[2],cell);
-				b=changeback(index[0],index[1]+1,index[2],cell);
-				c=changeback(index[0],index[1]+2,index[2],cell);
-				delete [] index;
-				angle=tiltangle(cell*cell*cell+a+oxygen,cell*cell*cell+b+oxygen,c+oxygen+cell*cell*cell,period);
-				tilt_angle_two.push_back(angle);
-        }
-			}
-      tilt_local=sum_together(tilt_angle_two);
-      double tilt_angle_two_sum;
-      MPI_Reduce(&tilt_local,&tilt_angle_two_sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      tilt_angle_two_sum=tilt_angle_two_sum/cell/cell/cell;
-		for(size_t layer=0;layer<MPI_LOOP_COUNT;layer++){
-        i=layer*world_size+world_rank;
-        if(i<cell*cell*cell){
-				index=changeindex(i,cell);
-				a=changeback(index[0],index[1],index[2],cell);
-				b=changeback(index[0]+1,index[1],index[2],cell);
-				c=changeback(index[0]+2,index[1],index[2],cell);
-				delete [] index;
-				angle=tiltangle(2*cell*cell*cell+a+oxygen,2*cell*cell*cell+b+oxygen,c+oxygen+2*cell*cell*cell,period);
-				tilt_angle_three.push_back(angle);
-			}
-      }
-      tilt_local=sum_together(tilt_angle_three);
-      double tilt_angle_three_sum;
-      MPI_Reduce(&tilt_local,&tilt_angle_three_sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      tilt_angle_three_sum=tilt_angle_three_sum/cell/cell/cell;
-      polarconfig::tilt_one_ave=tilt_angle_one_sum;
-      polarconfig::tilt_two_ave=tilt_angle_two_sum;
-      polarconfig::tilt_three_ave=tilt_angle_three_sum;
-      polarconfig::tilt_angle_one.push_back(polarconfig::tilt_one_ave);
-      polarconfig::tilt_angle_two.push_back(polarconfig::tilt_two_ave);
-      polarconfig::tilt_angle_three.push_back(polarconfig::tilt_three_ave);
 }
 /*here polarvar are in units of (e/A^3)^2,volume are in units of A^3,temperature are in units of K*/
 double dielectric(double polarvar,double volume,double temp){
@@ -816,9 +792,9 @@ void outpolar(){
 	fileout<<"polarization variance is:"<<std::endl;
 	fileout<<good[pall[0]]<<" "<<good[pall[1]]<<" "<<good[pall[2]]<<std::endl;
 	fileout<<"the relative dielectric constant(epsilon0) is :"<<std::endl;
-  int Nx=polarconfig::Nx;
-  int Ny=polarconfig::Ny;
-  int Nz=polarconfig::Nz;
+    int Nx=polarconfig::Nx;
+    int Ny=polarconfig::Ny;
+    int Nz=polarconfig::Nz;
 	double dx=dielectric(good[pall[0]],lx*ly*lz*Nx*Ny*Nz,polarconfig::temperature);
 	double dy=dielectric(good[pall[1]],lx*ly*lz*Nx*Ny*Nz,polarconfig::temperature);
 	double dz=dielectric(good[pall[2]],lx*ly*lz*Nx*Ny*Nz,polarconfig::temperature);

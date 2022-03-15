@@ -20,7 +20,6 @@ int main(){
 	//caculating the displacement for ABO_x3
   MPI_Init(NULL,NULL);
   int& cell=polarconfig::cell;
-  std::fstream dump;
   std::fstream calist;
   std::string dumpfile;
   std::fstream chargefile;
@@ -34,82 +33,80 @@ int main(){
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   std::list<double*> ve_list;
   if(world_rank==0){
-    info(cell,polarconfig::Nx,polarconfig::Ny,polarconfig::Nz,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature,position_variance_on,local_die);
-	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
+    info(cell,polarconfig::Nx,polarconfig::Ny,polarconfig::Nz,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature,position_variance_on,local_die,polarconfig::steps);
+	std::cout<<"the temperature now is: "<<polarconfig::temperature<<" "<<polarconfig::Nx<<" "<<polarconfig::Ny<<" "<<polarconfig::Nz<<" "<<polarconfig::steps<<std::endl;
 	}
-  MPI_Bcast(&cell,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	MPI_Bcast(&polarconfig::Nz,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	MPI_Bcast(&polarconfig::Ny,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	MPI_Bcast(&polarconfig::Nx,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  MPI_Bcast(&cell,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&polarconfig::Nz,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&polarconfig::Ny,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&polarconfig::Nx,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarconfig::temperature,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(&velocity_on,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast(&polarization_on,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast(&position_variance_on,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast(&local_die,1,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Bcast(&polarconfig::steps,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   int MPI_LOOP_COUNT=ceil((cell*cell*cell+0.0)/world_size);
   double* ve_temp;
 	size_t v_count=0;
   if(world_rank==0){
-	dump.open(dumpfile.c_str(),std::fstream::in);
 	calist.open(calistfile.c_str(),std::fstream::in);
   }
-	atom* A=new atom[cell*cell*cell];
-	atom* B=new atom[cell*cell*cell];
-	atom* oxygen=new atom[3*cell*cell*cell];
+	atom** A=new atom* [polarconfig::steps];
+    double** Ashadow=new double* [polarconfig::steps];
+	atom** B=new atom* [polarconfig::steps];
+    double** Bshadow=new double* [polarconfig::steps];
+	atom** oxygen=new atom* [polarconfig::steps];
+    double** polarshadow=new double* [polarconfig::steps];
+    double** period=new double* [polarconfig::steps];
+    for(size_t i=0;i<polarconfig::steps;i++){
+        A[i]=new atom [polarconfig::Nx*polarconfig::Ny*polarconfig::Nz];
+        Ashadow[i]=new double [3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz];
+        B[i]=new atom [polarconfig::Nx*polarconfig::Ny*polarconfig::Nz];
+        Bshadow[i]=new double [3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz];
+        oxygen[i]=new atom [3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz];
+        polarshadow[i]=new double [3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz];
+        period[i]=new double [3];
+    }
+    std::cout<<"I am here 2"<<std::endl;
   clock_t begin=clock();
   if(world_rank==0){
     chargefile.open("CHARGE.dat",std::fstream::in);
 	for(size_t i=0;i<cell*cell*cell;i++){
-		A[i].type='b';
-		A[i].charge[0]=2.90;
-        A[i].charge[1]=2.90;
-        A[i].charge[2]=2.90;
+		A[0][i].type='b';
         for(size_t j=0;j<3;j++){
-        chargefile>>A[i].charge[j];
+        chargefile>>A[0][i].charge[j];
         }
   	}
-	int ca_num;
-	while(calist>>ca_num){
-		A[ca_num].type='c';
-	}
 	for(size_t i=0;i<cell*cell*cell;i++){
-		B[i].type='z';
+		B[0][i].type='z';
+        for(size_t j=0;j<3;j++){
+            chargefile>>B[0][i].charge[j];
+            }
+	}
+	for(size_t i=0;i<3*cell*cell*cell;i++){
+	oxygen[0][i].type='o';
     for(size_t j=0;j<3;j++){
-		B[i].charge[j]=6.70;
+        chargefile>>oxygen[0][i].charge[j];
     }
-    for(size_t j=0;j<3;j++){
-        chargefile>>B[i].charge[j];
-        }
 	}
-	for(size_t i=0;i<cell*cell*cell;i++){
-		oxygen[i].type='o';
-		oxygen[i].charge[0]=-2.40;
-    oxygen[i].charge[1]=-2.40;
-    oxygen[i].charge[2]=-4.80;
-    for(size_t j=0;j<3;j++){
-        chargefile>>oxygen[i].charge[j];
+    chargefile.close();
+    for(size_t i=0;i<polarconfig::steps;i++){
+        for(size_t j=0;j<cell*cell*cell;j++){
+        for(size_t k=0;k<3;k++){
+            A[i][j].charge[k]=A[0][j].charge[k];
+            B[i][j].charge[k]=B[0][j].charge[k];
+            }
         }
-	}
-  for(size_t i=cell*cell*cell;i<2*cell*cell*cell;i++){
-    oxygen[i].type='o';
-    oxygen[i].charge[0]=-2.40;
-    oxygen[i].charge[1]=-4.80;
-    oxygen[i].charge[2]=-2.40;
-    for(size_t j=0;j<3;j++){
-        chargefile>>oxygen[i].charge[j];
+    }
+    for(size_t i=0;i<polarconfig::steps;i++){
+        for(size_t j=0;j<3*cell*cell*cell;j++){
+        for(size_t k=0;k<3;k++){
+            oxygen[i][j].charge[k]=oxygen[0][j].charge[k];
+            }
         }
-  }
-  for(size_t i=2*cell*cell*cell;i<3*cell*cell*cell;i++){
-    oxygen[i].type='o';
-    oxygen[i].charge[0]=-4.80;
-    oxygen[i].charge[1]=-2.40;
-    oxygen[i].charge[2]=-2.40;
-    for(size_t j=0;j<3;j++){
-        chargefile>>oxygen[i].charge[j];
-        }
-  }
-  chargefile.close();
+    }
   }
   atom atom_demo;
   int blockcounts[4]={3,3,1,1};
@@ -129,143 +126,59 @@ int main(){
   types[3]=MPI_INT;
   MPI_Type_create_struct(4,blockcounts,displs,types,&MPI_atom);
   MPI_Type_commit(&MPI_atom);
-	std::string la_pattern="ITEM: BOX BOUNDS pp pp pp";
-	std::string coord_pattern="ITEM: ATOMS x y z ";
-	double period[3]={0,0,0};
-	double x1,x2;
-	size_t signal=0;
-  int read_success;
-  int getnewframe=0;
-  size_t read_bound=60000;
-  std::string line="0";
-	do
-   {
-   if(world_rank==0){
-    if(getline(dump,line)){
-      read_success=1;
-    }
-    else{
-      read_success=0;
-     }
-     }
-   else{
-    }
-   MPI_Bcast(&read_success,1,MPI_INT,0,MPI_COMM_WORLD);
-   MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-   if(signal==read_bound){
-    read_success=0;
-    MPI_Bcast(&read_success,1,MPI_INT,0,MPI_COMM_WORLD);
-   }
-   if(read_success==1){
-    //continue working on it;
-   }
-   else{
-    break;
-   }
-   if(world_rank==0){
-		if(line.find(la_pattern)!=std::string::npos){
-			std::cout<<signal++<<std::endl;
-			for(size_t i=0;i<3;i++){
-			dump>>x1;
-			dump>>x2;
-			period[i]=x2-x1;
-			}
-			polarconfig::la_x.push_back(period[0]/cell);
-			polarconfig::la_y.push_back(period[1]/cell);
-			polarconfig::la_z.push_back(period[2]/cell);
-			if(velocity_on){
-				ve_temp=new double [cell*cell*cell*5*3];
-				ve_list.push_back(ve_temp);
-				v_count=0;
-			}
-		}
-	  if(coord_pattern==line || line.find(coord_pattern)!=std::string::npos){
-      getnewframe=1;
-			for(size_t i=0;i<cell*cell*cell;i++){
-				for(size_t j=0;j<3;j++){
-					dump>>A[i].position[j];
-					}
-				for(size_t j=0;j<3;j++){
-					if(velocity_on){
-						dump>>ve_temp[v_count];
-						v_count++;
-					}
-				}
-				}
-			for(size_t i=0;i<cell*cell*cell;i++){
-				for(size_t j=0;j<3;j++){
-					dump>>B[i].position[j];
-				}
-				for(size_t j=0;j<3;j++){
-					if(velocity_on){
-					dump>>ve_temp[v_count];
-					v_count++;
-					}
-				}
-			}
-			for(size_t i=0;i<3*cell*cell*cell;i++){
-				for(size_t j=0;j<3;j++){
-				dump>>oxygen[i].position[j];
-				}
-				for(size_t j=0;j<3;j++){
-				if(velocity_on){
-					dump>>ve_temp[v_count];
-					v_count++;
-					}
-				}
-			}
+ MPI_Barrier(MPI_COMM_WORLD);
+ /*Start to Read MD*/
+  std::cout<<"I am here"<< world_rank <<std::endl;
+ if(world_rank==0){
+ std::fstream dump;
+ dump.open(dumpfile.c_str(),std::fstream::in);
+ readMD(dump,polarconfig::Nx,polarconfig::Ny,polarconfig::Nz,period,A,B,oxygen,polarconfig::steps);
+ }
+ else{
+ }
+ MPI_Barrier(MPI_COMM_WORLD);
+ std::cout<<"Finished Reading"<<std::endl;
+ for(size_t i=0;i<polarconfig::steps;i++){
+      MPI_Bcast(period[i],3,MPI_DOUBLE,0,MPI_COMM_WORLD);
+      MPI_Bcast(A[i],polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_atom,0,MPI_COMM_WORLD);
+      MPI_Bcast(B[i],polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_atom,0,MPI_COMM_WORLD);
+      MPI_Bcast(oxygen[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_atom,0,MPI_COMM_WORLD);
+      if(world_rank==0){
+      std::cout<<"Time Step:="<<i<<std::endl;
       }
-      }
-      else{
-      //doing nothing, waiting for root processor finish reading.
-      };
-      MPI_Barrier(MPI_COMM_WORLD);
-      MPI_Bcast(&getnewframe,1,MPI_INT,0,MPI_COMM_WORLD);
-      if(getnewframe==1){
-      MPI_Bcast(period,3,MPI_DOUBLE,0,MPI_COMM_WORLD);
-      MPI_Bcast(A,cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
-      MPI_Bcast(B,cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
-      MPI_Bcast(oxygen,3*cell*cell*cell,MPI_atom,0,MPI_COMM_WORLD);
-      MPI_Barrier(MPI_COMM_WORLD);
-			if(polarization_on){
-				analyzepolar(A,B,oxygen,period,cell);
-        displace_A_unit(A,oxygen,period,cell);
-       displace_B_unit(B,oxygen,period,cell);
-			}
-      if(position_variance_on){
-        analyzeposition_variance(A,B,oxygen,period,cell,signal);
-      }
-      getnewframe=0;
-      }
-      else{
-      }
-	}while(true);
-  clock_t end=clock();
-  double use_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout<<"The total time spend is: "<<use_secs<<std::endl;
-  MPI_Barrier(MPI_COMM_WORLD);
-	if(polarization_on){
+      if(polarization_on){
+      analyzepolar(A[i],B[i],oxygen[i],Ashadow[i],Bshadow[i],polarshadow[i],period[i],cell);
+      displace_A_unit(A[i],oxygen[i],Ashadow[i],period[i],cell);
+      displace_B_unit(B[i],oxygen[i],Bshadow[i],period[i],cell);
+       }
+      if(polarization_on){
         if(world_rank==0){
-	     	outpolar();
-    	}
-	}
-	if(velocity_on){
-		autospeed(ve_list,cell);
-	}
-	dump.close();
-	calist.close();
-  MPI_Barrier(MPI_COMM_WORLD);
-  if(local_die){
-  double lx=average(polarconfig::la_x);
-  double ly=average(polarconfig::la_y);
-  double lz=average(polarconfig::la_z);
-  double volume=lx*ly*lz;
-  MPI_Bcast(&volume,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-  calculate_local_die(cell,volume,polarconfig::temperature);
-  }
-  if(position_variance_on){
-  calculate_local_variance(cell,polarconfig::temperature);
-  }
-  MPI_Finalize();
-	return 0;
+            outpolar();
+         }
+     }
+ }
+ MPI_Barrier(MPI_COMM_WORLD);
+ clock_t end=clock();
+ double use_secs = double(end - begin) / CLOCKS_PER_SEC;
+ std::cout<<"The total time spend is: "<<use_secs<<std::endl;
+ MPI_File fpolar,fdispA,fdispB;
+ MPI_File_open(MPI_COMM_WORLD,"local_polar.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fpolar);
+ MPI_File_open(MPI_COMM_WORLD,"polar_direction_A.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fdispA);
+ MPI_File_open(MPI_COMM_WORLD,"polar_direction_B.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fdispB);
+  MPI_Offset offset;
+ MPI_Status status;
+ for(size_t i=world_rank;i<polarconfig::steps;i=i+world_size){
+  offset=i*(3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz)*sizeof(double);
+  MPI_File_write_at_all(fpolar,offset,polarshadow[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_DOUBLE,&status);
+  MPI_File_write_at_all(fdispA,offset,Ashadow[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_DOUBLE,&status);
+  MPI_File_write_at_all(fdispB,offset,Bshadow[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_DOUBLE,&status);
+ }
+ MPI_File_close(&fpolar);
+ MPI_File_close(&fdispA);
+ MPI_File_close(&fdispB);
+ clock_t end2=clock();
+ use_secs = double(end2 - end) / CLOCKS_PER_SEC;
+ std::cout<<"The IO time spend is: "<<use_secs<<std::endl;
+ MPI_Finalize();
+ return 0;
 }
