@@ -28,17 +28,17 @@ void Global_polar(double* changeP,atom* AI,atom* A0,atom* BI,atom* B0,atom* OxyI
         for(size_t j=0;j<3;j++){
             temp=AI[i].position[j]-A0[i].position[j];
             temp=temp-round(temp/period[j])*period[j];
-            dp[j]=(temp)*AI[i].charge[j];
+            dp[j]=dp[j]+(temp)*AI[i].charge[j];
             temp=BI[i].position[j]-B0[i].position[j];
             temp=temp-round(temp/period[j])*period[j];
-            dp[j]=(temp)*BI[i].charge[j];
+            dp[j]=dp[j]+(temp)*BI[i].charge[j];
         }
     }
     for(size_t i=world_rank;i<3*cell*cell*cell;i=i+world_size){
         for(size_t j=0;j<3;j++){
             temp=OxyI[i].position[j]-Oxy0[i].position[j];
             temp=temp-round(temp/period[j])*period[j];
-            dp[j]=(temp)*OxyI[i].charge[j];
+            dp[j]=dp[j]+(temp)*OxyI[i].charge[j];
         }
     }
     for(size_t i=0;i<3;i++){
