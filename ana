@@ -1,10 +1,14 @@
 &ana.x
 filename=dump.xyz, 
-cell=20,
+cell=10,
+Nx=10,
+Ny=10,
+Nz=10,
 temp=100,
 solution_list=cadata.txt, 
 auto_velocity=0, 
-polarization=0, 
+polarization=1, 
 local_die=0,
-posit_variance=1,
+posit_variance=0,
+steps=1251,
 /

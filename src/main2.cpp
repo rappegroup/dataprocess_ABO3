@@ -135,6 +135,7 @@ int main(){
             B[i][j].charge[k]=B[0][j].charge[k];
             }
         }
+        std::cout<<"i="<<i<<std::endl;
     }
     for(size_t i=0;i<polarconfig::steps;i++){
         for(size_t j=0;j<3*cell*cell*cell;j++){
@@ -144,6 +145,8 @@ int main(){
         }
     }
   }
+  MPI_Barrier(MPI_COMM_WORLD);
+  std::cout<<"I am here 3 "<<world_rank<<std::endl;
   atom atom_demo;
   int blockcounts[4]={3,3,1,1};
   MPI_Datatype types[4];
@@ -220,5 +223,4 @@ int main(){
  use_secs = double(end2 - end) / CLOCKS_PER_SEC;
  std::cout<<"The IO time spend is: "<<use_secs<<std::endl;
  MPI_Finalize();
- return 0;
 }
