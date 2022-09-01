@@ -9,14 +9,14 @@ OBJDIR=./obj
 SRCDIR=./src
 INCDIR=./include
 CXXFLAGS+=-I$(INCDIR)
-FFT_INC = #-I/home/jiahaoz/fftw_not_delete/include
-FFT_PATH = #-L/home/jiahaoz/fftw_not_delete/lib
+FFT_INC = -I/p/home/jiahaoz/abinit_support/include #-I/home/jiahaoz/fftw_not_delete/include
+FFT_PATH = -L/p/home/jiahaoz/abinit_support/lib #-L/home/jiahaoz/fftw_not_delete/lib
 FFT_LIB = -lfftw3
 CXXFLAGS+= $(FFT_INC)
 LIBPATH+= $(FFT_PATH)
-ana.x: atom.o main.o space.o interface.o polarconfig.o autospeed.o
+ana.x: atom.o main2.o space.o interface.o polarconfig.o autospeed.o
 	mkdir -p obj bin
-	$(CXX) -o ana.x $(OMP_FLAG) atom.o main.o space.o interface.o polarconfig.o autospeed.o  $(LIBPATH) $(FFT_LIB)
+	$(CXX) -o ana.x $(OMP_FLAG) atom.o main2.o space.o interface.o polarconfig.o autospeed.o  $(LIBPATH) $(FFT_LIB)
 	mv *.o obj
 %.o: %.c $(DEPS)
 	$(CXX) $(CXXFLAGS)-c -o $@ $^
