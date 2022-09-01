@@ -38,5 +38,6 @@ namespace polarconfig
    extern int Ny;
    extern int Nz;
    extern int cell;
+   extern int steps;
 }
 #endif
