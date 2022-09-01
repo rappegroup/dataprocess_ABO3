@@ -219,8 +219,10 @@ int main(){
  MPI_File_close(&fpolar);
  MPI_File_close(&fdispA);
  MPI_File_close(&fdispB);
+ MPI_File_close(&Global_P);
  clock_t end2=clock();
  use_secs = double(end2 - end) / CLOCKS_PER_SEC;
  std::cout<<"The IO time spend is: "<<use_secs<<std::endl;
+ MPI_Barrier(MPI_COMM_WORLD);
  MPI_Finalize();
 }
