@@ -198,9 +198,6 @@ int main(){
      }
  }
  MPI_Barrier(MPI_COMM_WORLD);
- clock_t end=clock();
- double use_secs = double(end - begin) / CLOCKS_PER_SEC;
- std::cout<<"The total time spend is: "<<use_secs<<std::endl;
  MPI_File fpolar,fdispA,fdispB,Global_P;
  MPI_File_open(MPI_COMM_WORLD,"local_polar.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fpolar);
  MPI_File_open(MPI_COMM_WORLD,"polar_direction_A.bin",MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL,&fdispA);
@@ -210,19 +207,19 @@ int main(){
  MPI_Status status;
  for(size_t i=world_rank;i<polarconfig::steps;i=i+world_size){
   offset=i*(3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz)*sizeof(double);
-  MPI_File_write_at_all(fpolar,offset,polarshadow[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_DOUBLE,&status);
-  MPI_File_write_at_all(fdispA,offset,Ashadow[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_DOUBLE,&status);
-  MPI_File_write_at_all(fdispB,offset,Bshadow[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_DOUBLE,&status);
+  MPI_File_write_at(fpolar,offset,polarshadow[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_DOUBLE,&status);
+  MPI_File_write_at(fdispA,offset,Ashadow[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_DOUBLE,&status);
+  MPI_File_write_at(fdispB,offset,Bshadow[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_DOUBLE,&status);
   offset=i*3*sizeof(double);
-  MPI_File_write_at_all(Global_P,offset,globalpolar[i],3,MPI_DOUBLE,&status);
+  MPI_File_write_at(Global_P,offset,globalpolar[i],3,MPI_DOUBLE,&status);
  }
  MPI_File_close(&fpolar);
  MPI_File_close(&fdispA);
  MPI_File_close(&fdispB);
  MPI_File_close(&Global_P);
- clock_t end2=clock();
- use_secs = double(end2 - end) / CLOCKS_PER_SEC;
- std::cout<<"The IO time spend is: "<<use_secs<<std::endl;
+ clock_t end=clock();
+ double use_secs = double(end - begin) / CLOCKS_PER_SEC;
  MPI_Barrier(MPI_COMM_WORLD);
+ std::cout<<"The IO time spend is: "<<use_secs<<"RANK:="<<world_rank<<std::endl;
  MPI_Finalize();
 }
