@@ -178,7 +178,7 @@ int main(){
  MPI_File_close(&fdispB);
  clock_t end2=clock();
  use_secs = double(end2 - end) / CLOCKS_PER_SEC;
+ MPI_Barrier(MPI_COMM_WORLD)
  std::cout<<"The IO time spend is: "<<use_secs<<std::endl;
- MPI_Finalize();
  return 0;
 }

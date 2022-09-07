@@ -105,7 +105,6 @@ int main(){
         period[i]=new double [3];
         globalpolar[i]=new double [3];
     }
-    std::cout<<"I am here 2"<<std::endl;
   clock_t begin=clock();
   if(world_rank==0){
     chargefile.open("CHARGE.dat",std::fstream::in);
@@ -135,7 +134,6 @@ int main(){
             B[i][j].charge[k]=B[0][j].charge[k];
             }
         }
-        std::cout<<"i="<<i<<std::endl;
     }
     for(size_t i=0;i<polarconfig::steps;i++){
         for(size_t j=0;j<3*cell*cell*cell;j++){
@@ -146,7 +144,6 @@ int main(){
     }
   }
   MPI_Barrier(MPI_COMM_WORLD);
-  std::cout<<"I am here 3 "<<world_rank<<std::endl;
   atom atom_demo;
   int blockcounts[4]={3,3,1,1};
   MPI_Datatype types[4];
@@ -167,7 +164,6 @@ int main(){
   MPI_Type_commit(&MPI_atom);
  MPI_Barrier(MPI_COMM_WORLD);
  /*Start to Read MD*/
-  std::cout<<"I am here"<< world_rank <<std::endl;
  if(world_rank==0){
  std::fstream dump;
  dump.open(dumpfile.c_str(),std::fstream::in);
@@ -182,9 +178,6 @@ int main(){
       MPI_Bcast(A[i],polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_atom,0,MPI_COMM_WORLD);
       MPI_Bcast(B[i],polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_atom,0,MPI_COMM_WORLD);
       MPI_Bcast(oxygen[i],3*polarconfig::Nx*polarconfig::Ny*polarconfig::Nz,MPI_atom,0,MPI_COMM_WORLD);
-      if(world_rank==0){
-      std::cout<<"Time Step:="<<i<<std::endl;
-      }
       if(polarization_on){
       analyzepolar(A[i],B[i],oxygen[i],Ashadow[i],Bshadow[i],polarshadow[i],period[i],cell);
       displace_A_unit(A[i],oxygen[i],Ashadow[i],period[i],cell);
