@@ -14,9 +14,9 @@ FFT_PATH = -L/p/home/jiahaoz/abinit_support/lib #-L/home/jiahaoz/fftw_not_delete
 FFT_LIB = -lfftw3
 CXXFLAGS+= $(FFT_INC)
 LIBPATH+= $(FFT_PATH)
-ana.x: atom.o searchmain.o space.o interface.o polarconfig.o autospeed.o searchunit.o
+ana.x: atom.o main2.o space.o interface.o polarconfig.o autospeed.o
 	mkdir -p obj bin
-	$(CXX) -o ana.x $(OMP_FLAG) atom.o searchmain.o space.o interface.o polarconfig.o autospeed.o searchunit.o $(LIBPATH) $(FFT_LIB)
+	$(CXX) -o ana.x $(OMP_FLAG) atom.o main2.o space.o interface.o polarconfig.o autospeed.o  $(LIBPATH) $(FFT_LIB)
 	mv *.o obj
 %.o: %.c $(DEPS)
 	$(CXX) $(CXXFLAGS)-c -o $@ $^
