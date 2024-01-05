@@ -33,16 +33,16 @@ int main(){
   std::string calistfile;
   int world_rank;
   int world_size;
-  std::string datafile="data.BFO";
+  std::string datafile="STO.data";
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   std::list<double*> ve_list;
   if(world_rank==0){
     info(Nx,Ny,Nz,dumpfile,calistfile,velocity_on,polarization_on,polarconfig::temperature,position_variance_on,local_die);
 	std::cout<<"the temperature now is: "<<polarconfig::temperature<<std::endl;
 	}
-  MPI_Bcast(&Nx,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-  MPI_Bcast(&Ny,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-  MPI_Bcast(&Nz,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  MPI_Bcast(&Nx,1,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Bcast(&Ny,1,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Bcast(&Nz,1,MPI_INT,0,MPI_COMM_WORLD);
   searchneighbor(datafile,Nx,Ny,Nz);
   if(world_rank==1){
   for(size_t i=0;i<Nx*Ny*Nz;i++){
@@ -81,41 +81,30 @@ int main(){
 	atom* A=new atom[Nx*Ny*Nz];
 	atom* B=new atom[Nx*Ny*Nz];
 	atom* oxygen=new atom[3*Nx*Ny*Nz];
-  clock_t begin=clock();
-	for(size_t i=0;i<Nx*Ny*Nz;i++){
-		A[i].type='b';
-		A[i].charge[0]=2.90;
-    A[i].charge[1]=2.90;
-    A[i].charge[2]=2.90;
-  	}
-	int ca_num;
-	while(calist>>ca_num){
-		A[ca_num].type='c';
-	}
-	for(size_t i=0;i<Nx*Ny*Nz;i++){
-		B[i].type='z';
-    for(size_t j=0;j<3;j++){
-		B[i].charge[j]=6.70;
+if( world_rank == 0){
+    std::fstream chargefile;
+    chargefile.open("CHARGE.dat", std::fstream::in);
+    for(size_t i = 0; i < Nx * Ny * Nz; i++){
+        A[i].type = 'a';
+        for(size_t j = 0; j < 3; j++){
+            chargefile >> A[i].charge[j];
+        }
     }
-	}
-	for(size_t i=0;i<Nx*Ny*Nz;i++){
-		oxygen[i].type='o';
-		oxygen[i].charge[0]=-2.40;
-    oxygen[i].charge[1]=-2.40;
-    oxygen[i].charge[2]=-4.80;
-	}
-  for(size_t i=Nx*Ny*Nz;i<2*Nx*Ny*Nz;i++){
-    oxygen[i].type='o';
-    oxygen[i].charge[0]=-2.40;
-    oxygen[i].charge[1]=-4.80;
-    oxygen[i].charge[2]=-2.40;
-  }
-  for(size_t i=2*Nx*Ny*Nz;i<3*Nx*Ny*Nz;i++){
-    oxygen[i].type='o';
-    oxygen[i].charge[0]=-4.80;
-    oxygen[i].charge[1]=-2.40;
-    oxygen[i].charge[2]=-2.40;
-  }
+    for(size_t i = 0; i < Nx * Ny * Nz; i++){
+        B[i].type = 'b';
+        for(size_t j = 0; j < 3; j++){
+            chargefile >> B[i].charge[j];
+        }
+    }
+    for(size_t i = 0; i < 3 * Nx * Ny * Nz; i++){
+        oxygen[i].type = 'o';
+        for(size_t j = 0; j < 3; j++){
+            chargefile >> oxygen[i].charge[j];
+        }
+    }
+}
+      MPI_Barrier(MPI_COMM_WORLD);
+  clock_t begin=clock();
   atom atom_demo;
   int blockcounts[4]={3,3,1,1};
   MPI_Datatype types[4];
